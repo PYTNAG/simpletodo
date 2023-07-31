@@ -1,7 +1,7 @@
 CREATE TABLE "users" (
   "id" serial PRIMARY KEY,
-  "username" text NOT NULL,
-  "hash" bytea UNIQUE NOT NULL
+  "username" text UNIQUE NOT NULL,
+  "hash" bytea NOT NULL
 );
 
 CREATE TABLE "lists" (
