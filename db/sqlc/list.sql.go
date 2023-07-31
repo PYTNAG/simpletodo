@@ -55,7 +55,7 @@ func (q *Queries) GetLists(ctx context.Context, author int32) ([]GetListsRow, er
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetListsRow
+	items := []GetListsRow{}
 	for rows.Next() {
 		var i GetListsRow
 		if err := rows.Scan(&i.ID, &i.Header); err != nil {

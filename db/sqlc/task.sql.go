@@ -68,7 +68,7 @@ func (q *Queries) GetChildTasks(ctx context.Context, parentTask sql.NullInt32) (
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Task
+	items := []Task{}
 	for rows.Next() {
 		var i Task
 		if err := rows.Scan(
@@ -102,7 +102,7 @@ func (q *Queries) GetTasks(ctx context.Context, listID int32) ([]Task, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Task
+	items := []Task{}
 	for rows.Next() {
 		var i Task
 		if err := rows.Scan(

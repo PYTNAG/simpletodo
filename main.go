@@ -6,19 +6,18 @@ import (
 
 	"github.com/PYTNAG/simpletodo/api"
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	"github.com/PYTNAG/simpletodo/util"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	dbDriver   = "postgres"
-	dbSource   = "postgresql://root:mysecret@localhost:5432/simple_todo?sslmode=disable"
-	serverAddr = "localhost:8080"
-)
-
 func main() {
-	var err error
-	conn, err := sql.Open(dbDriver, dbSource)
+	cfg, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatal("Cannot load config: ", err)
+	}
+
+	conn, err := sql.Open(cfg.DBDriver, cfg.DBSource)
 	if err != nil {
 		log.Fatal("Cannot connect to db: ", err)
 	}
@@ -27,8 +26,8 @@ func main() {
 
 	server := api.NewServer(store)
 
-	err = server.Start(serverAddr)
+	err = server.Start(cfg.ServerAddr)
 	if err != nil {
-		log.Fatal("can't start server: ", err)
+		log.Fatal("Cannot start server: ", err)
 	}
 }
