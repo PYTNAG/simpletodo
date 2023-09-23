@@ -23,16 +23,16 @@ func (s *Server) addUser(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.AddUserParams{
+	arg := db.CreateUserTxParams{
 		Username: req.Username,
 		Hash:     []byte(req.Password), // TODO: replace with [b/s]crypt alg
 	}
 
-	user, err := s.store.AddUser(ctx, arg)
+	result, err := s.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, addUserResponse{ID: user.ID}) // TODO: return auth token
+	ctx.JSON(http.StatusOK, addUserResponse{ID: result.User.ID}) // TODO: return auth token
 }
