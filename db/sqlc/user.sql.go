@@ -29,9 +29,10 @@ func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) (User, error) 
 	return i, err
 }
 
-const deleteUser = `-- name: DeleteUser :exec
+const deleteUser = `-- name: DeleteUser :one
 DELETE FROM users
 WHERE id = $1 AND hash = $2
+RETURNING id, username
 `
 
 type DeleteUserParams struct {
@@ -39,9 +40,16 @@ type DeleteUserParams struct {
 	Hash []byte `json:"hash"`
 }
 
-func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, arg.ID, arg.Hash)
-	return err
+type DeleteUserRow struct {
+	ID       int32  `json:"id"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) (DeleteUserRow, error) {
+	row := q.db.QueryRowContext(ctx, deleteUser, arg.ID, arg.Hash)
+	var i DeleteUserRow
+	err := row.Scan(&i.ID, &i.Username)
+	return i, err
 }
 
 const getUser = `-- name: GetUser :one

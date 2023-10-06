@@ -35,9 +35,10 @@ func deleteTestUser(t *testing.T, u User) {
 		ID:   u.ID,
 		Hash: u.Hash,
 	}
-	err := testQueries.DeleteUser(context.Background(), deleteArg)
+	r, err := testQueries.DeleteUser(context.Background(), deleteArg)
 
 	require.NoError(t, err)
+	require.Equal(t, DeleteUserRow{ID: u.ID, Username: u.Username}, r)
 }
 
 func TestAddUser(t *testing.T) {

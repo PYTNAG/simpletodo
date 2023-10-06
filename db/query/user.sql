@@ -15,6 +15,7 @@ UPDATE users
 WHERE id = $1
 RETURNING *;
 
--- name: DeleteUser :exec
+-- name: DeleteUser :one
 DELETE FROM users
-WHERE id = $1 AND hash = $2;
+WHERE id = $1 AND hash = $2
+RETURNING id, username;
