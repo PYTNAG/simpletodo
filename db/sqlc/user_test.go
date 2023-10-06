@@ -85,13 +85,14 @@ func TestRehashUser(t *testing.T) {
 	expectedUser := createRandomUser(t)
 
 	arg := RehashUserParams{
-		ID:   expectedUser.ID,
-		Hash: util.RandomByteArray(8),
+		ID:      expectedUser.ID,
+		OldHash: expectedUser.Hash,
+		NewHash: util.RandomByteArray(8),
 	}
 	actualUser, err := testQueries.RehashUser(context.Background(), arg)
 
 	require.NoError(t, err)
-	require.Equal(t, arg.Hash, actualUser.Hash)
+	require.Equal(t, arg.NewHash, actualUser.Hash)
 
 	deleteTestUser(t, actualUser)
 }

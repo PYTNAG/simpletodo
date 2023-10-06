@@ -19,6 +19,7 @@ func NewServer(store *db.Store) *Server {
 
 	// users
 	router.POST("/users", server.addUser)
+	router.PUT("/users/:id", server.rehashUser)
 	router.DELETE("/users/:id", server.deleteUser)
 
 	// lists
