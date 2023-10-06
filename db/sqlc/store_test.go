@@ -57,5 +57,7 @@ func TestCreateUserTx(t *testing.T) {
 		require.NotEmpty(t, lists)
 		require.Equal(t, 1, len(lists))
 		require.Equal(t, "default", lists[0].Header)
+
+		deleteTestUser(t, result.User)
 	}
 }
