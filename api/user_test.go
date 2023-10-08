@@ -50,7 +50,7 @@ func TestCreateUserAPI(t *testing.T) {
 			},
 		},
 		{
-			name: "UserAlreadyExist",
+			name: "Forbiden/UserAlreadyExist",
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateUserTxParams{
 					Username: user.Username,
@@ -64,6 +64,23 @@ func TestCreateUserAPI(t *testing.T) {
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusForbidden, recorder.Code)
+			},
+		},
+		{
+			name: "InternalError",
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.CreateUserTxParams{
+					Username: user.Username,
+					Hash:     user.Hash,
+				}
+
+				store.EXPECT().
+					CreateUserTx(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(db.CreateUserTxResult{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
 			},
 		},
 	}
