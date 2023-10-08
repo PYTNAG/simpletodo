@@ -37,3 +37,11 @@ func RandomString(n int) string {
 func RandomUsername() string {
 	return RandomString(24)
 }
+
+func RandomPassword() string {
+	return RandomString(16)
+}
+
+func RandomInt32() int32 {
+	return int32(rand.Uint32())
+}
