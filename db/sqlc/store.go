@@ -7,19 +7,25 @@ import (
 )
 
 // Provides all functions to execute db queries and transactions
-type Store struct {
+type Store interface {
+	CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
+	Querier
+}
+
+// Provides all functions to execute SQL queries and transactions
+type SQLStore struct {
 	*Queries
 	db *sql.DB
 }
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) Store {
+	return &SQLStore{
 		Queries: New(db),
 		db:      db,
 	}
 }
 
-func (store *Store) execTx(ctx context.Context, callback func(*Queries) error) error {
+func (store *SQLStore) execTx(ctx context.Context, callback func(*Queries) error) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -50,7 +56,7 @@ type CreateUserTxResult struct {
 }
 
 // Create a new user with one default list
-func (store *Store) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
+func (store *SQLStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error) {
 	var result CreateUserTxResult
 
 	err := store.execTx(ctx, func(q *Queries) error {
@@ -72,11 +78,7 @@ func (store *Store) CreateUserTx(ctx context.Context, arg CreateUserTxParams) (C
 			Header: "default",
 		})
 
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 
 	return result, err

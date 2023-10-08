@@ -7,17 +7,17 @@ import (
 
 // Server servers HTTP req-s for todo app
 type Server struct {
-	store  *db.Store
+	store  db.Store
 	router *gin.Engine
 }
 
 // NewServer creates a new HTTP server and setup routing
-func NewServer(store *db.Store) *Server {
+func NewServer(store db.Store) *Server {
 	server := &Server{store: store}
 
 	router := gin.Default()
 
-	router.POST("/users", server.addUser)
+	router.POST("/users", server.createUser)
 	router.PUT("/users/:id", server.rehashUser)
 	router.DELETE("/users/:id", server.deleteUser)
 
