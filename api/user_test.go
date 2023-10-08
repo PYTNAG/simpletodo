@@ -38,9 +38,19 @@ func TestCreateUserAPI(t *testing.T) {
 					Hash:     user.Hash,
 				}
 
+				res := db.CreateUserTxResult{
+					User: db.User{
+						ID:       user.ID,
+						Username: user.Username,
+						Hash:     user.Hash,
+					},
+					List: db.List{},
+				}
+
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), gomock.Eq(arg)).
-					Times(1)
+					Times(1).
+					Return(res, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				gotResult := util.Unmarshal[createUserResponse](t, recorder.Body)
@@ -114,7 +124,7 @@ func TestCreateUserAPI(t *testing.T) {
 func randomUser() fullUserInfo {
 	pass := util.RandomPassword()
 	return fullUserInfo{
-		ID:       util.RandomInt32(),
+		ID:       util.RandomID(),
 		Username: util.RandomUsername(),
 		Password: pass,
 		Hash:     hashPass(pass),

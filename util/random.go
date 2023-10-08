@@ -42,6 +42,11 @@ func RandomPassword() string {
 	return RandomString(16)
 }
 
-func RandomInt32() int32 {
-	return int32(rand.Uint32())
+func RandomID() int32 {
+	res := rand.Int31()
+	if res == int32(0) {
+		res = 1
+	}
+
+	return res
 }
