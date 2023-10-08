@@ -46,7 +46,7 @@ func TestCreateUserAPI(t *testing.T) {
 				gotResult := util.Unmarshal[createUserResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
-				require.GreaterOrEqual(t, gotResult.ID, int32(0))
+				require.GreaterOrEqual(t, gotResult.ID, int32(1))
 			},
 		},
 		{
