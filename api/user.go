@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -8,19 +9,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type addUserRequest struct {
+type createUserRequest struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-type addUserResponse struct {
+type createUserResponse struct {
 	ID int32 `json:"id"`
 }
 
-func (s *Server) addUser(ctx *gin.Context) {
-	var req addUserRequest
+func (s *Server) createUser(ctx *gin.Context) {
+	var req createUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
 		return
 	}
 
@@ -31,11 +32,16 @@ func (s *Server) addUser(ctx *gin.Context) {
 
 	result, err := s.store.CreateUserTx(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "User already exist"))
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, addUserResponse{ID: result.User.ID}) // TODO: return auth token
+	ctx.JSON(http.StatusCreated, createUserResponse{ID: result.User.ID}) // TODO: return auth token
 }
 
 type deleteUserRequest struct {
@@ -45,13 +51,13 @@ type deleteUserRequest struct {
 func (s *Server) deleteUser(ctx *gin.Context) {
 	var req deleteUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
 		return
 	}
 
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be 32-bit integer"))
 		return
 	}
 
@@ -60,13 +66,18 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 		Hash: hashPass(req.Password),
 	}
 
-	r, err := s.store.DeleteUser(ctx, arg)
+	_, err = s.store.DeleteUser(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "User doesn't exist"))
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, r)
+	ctx.JSON(http.StatusNoContent, nil)
 }
 
 type rehashUserRequest struct {
@@ -77,13 +88,13 @@ type rehashUserRequest struct {
 func (s *Server) rehashUser(ctx *gin.Context) {
 	var req rehashUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
 		return
 	}
 
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be 32-bit integer"))
 		return
 	}
 
@@ -95,11 +106,16 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 
 	_, err = s.store.RehashUser(ctx, arg)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusForbidden, "Wrong actual password")
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, nil)
+	ctx.JSON(http.StatusNoContent, nil)
 }
 
 func hashPass(pass string) []byte {

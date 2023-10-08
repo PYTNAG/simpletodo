@@ -32,6 +32,16 @@ func (s *Server) Start(address string) error {
 	return s.router.Run(address)
 }
 
-func errorResponse(err error) gin.H {
-	return gin.H{"error": err.Error()}
+func errorResponse(err error, additionalMessage string) gin.H {
+	response := gin.H{}
+
+	if err != nil {
+		response["error"] = err.Error()
+	}
+
+	if additionalMessage != "" {
+		response["message"] = additionalMessage
+	}
+
+	return response
 }
