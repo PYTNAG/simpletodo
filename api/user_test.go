@@ -27,11 +27,15 @@ func TestCreateUserAPI(t *testing.T) {
 
 	testCases := []struct {
 		name          string
+		body          func(user fullUserInfo) *bytes.Buffer
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Created",
+			body: func(user fullUserInfo) *bytes.Buffer {
+				return bytes.NewBufferString(fmt.Sprintf(`{"username": "%s", "password": "%s"}`, user.Username, user.Password))
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateUserTxParams{
 					Username: user.Username,
@@ -61,6 +65,9 @@ func TestCreateUserAPI(t *testing.T) {
 		},
 		{
 			name: "Forbiden/UserAlreadyExist",
+			body: func(user fullUserInfo) *bytes.Buffer {
+				return bytes.NewBufferString(fmt.Sprintf(`{"username": "%s", "password": "%s"}`, user.Username, user.Password))
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateUserTxParams{
 					Username: user.Username,
@@ -78,6 +85,9 @@ func TestCreateUserAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
+			body: func(user fullUserInfo) *bytes.Buffer {
+				return bytes.NewBufferString(fmt.Sprintf(`{"username": "%s", "password": "%s"}`, user.Username, user.Password))
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateUserTxParams{
 					Username: user.Username,
@@ -91,6 +101,20 @@ func TestCreateUserAPI(t *testing.T) {
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name: "Invalid Request Data",
+			body: func(user fullUserInfo) *bytes.Buffer {
+				return bytes.NewBufferString("{}")
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUserTx(gomock.Any(), nil).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
 	}
@@ -108,9 +132,7 @@ func TestCreateUserAPI(t *testing.T) {
 			server := NewServer(store)
 			recorder := httptest.NewRecorder()
 
-			body := []byte(fmt.Sprintf(`{"username": "%s", "password": "%s"}`, user.Username, user.Password))
-
-			request, err := http.NewRequest(http.MethodPost, "/users", bytes.NewReader(body))
+			request, err := http.NewRequest(http.MethodPost, "/users", tc.body(user))
 
 			require.NoError(t, err)
 
