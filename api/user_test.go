@@ -31,7 +31,7 @@ func TestCreateUserAPI(t *testing.T) {
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
-			name: "OK",
+			name: "Created",
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateUserTxParams{
 					Username: user.Username,
@@ -45,7 +45,7 @@ func TestCreateUserAPI(t *testing.T) {
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				gotResult := util.Unmarshal[createUserResponse](t, recorder.Body)
 
-				require.Equal(t, http.StatusOK, recorder.Code)
+				require.Equal(t, http.StatusCreated, recorder.Code)
 				require.GreaterOrEqual(t, gotResult.ID, int32(0))
 			},
 		},
