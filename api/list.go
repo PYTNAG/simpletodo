@@ -2,35 +2,36 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
 
-type addListToUserRequest struct {
+type addListToUserData struct {
 	Header string `json:"header" binding:"required"`
 }
 
 func (s *Server) addListToUser(ctx *gin.Context) {
-	var req addListToUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
-	}
+	var (
+		req  getUserRequest
+		data addListToUserData
+	)
 
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 32)
-	if err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be 32-bit integer"))
 		return
 	}
 
-	arg := db.AddListParams{
-		Author: int32(id),
-		Header: req.Header,
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
 	}
 
-	_, err = s.store.AddList(ctx, arg)
-	if err != nil {
+	arg := db.AddListParams{
+		Author: req.ID,
+		Header: data.Header,
+	}
+
+	if _, err := s.store.AddList(ctx, arg); err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}
@@ -39,14 +40,14 @@ func (s *Server) addListToUser(ctx *gin.Context) {
 }
 
 func (s *Server) getUserLists(ctx *gin.Context) {
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 32)
-	if err != nil {
+	var req getUserRequest
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Id must be 32-bit integer"))
 		return
 	}
 
-	var lists []db.GetListsRow
-	lists, err = s.store.GetLists(ctx, int32(id))
+	lists, err := s.store.GetLists(ctx, req.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return

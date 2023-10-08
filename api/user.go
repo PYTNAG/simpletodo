@@ -3,11 +3,14 @@ package api
 import (
 	"database/sql"
 	"net/http"
-	"strconv"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
+
+type getUserRequest struct {
+	ID int32 `uri:"id" binding:"required, min=1"`
+}
 
 type createUserRequest struct {
 	Username string `json:"username" binding:"required"`
@@ -44,30 +47,32 @@ func (s *Server) createUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, createUserResponse{ID: result.User.ID}) // TODO: return auth token
 }
 
-type deleteUserRequest struct {
+type deleteUserData struct {
 	Password string `json:"password" binding:"required"`
 }
 
 func (s *Server) deleteUser(ctx *gin.Context) {
-	var req deleteUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	var (
+		req  getUserRequest
+		data deleteUserData
+	)
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be positive integer and greater than 0"))
+		return
+	}
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
 		return
 	}
 
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 32)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be 32-bit integer"))
-		return
-	}
-
 	arg := db.DeleteUserParams{
-		ID:   int32(id),
-		Hash: hashPass(req.Password),
+		ID:   req.ID,
+		Hash: hashPass(data.Password),
 	}
 
-	_, err = s.store.DeleteUser(ctx, arg)
-	if err != nil {
+	if _, err := s.store.DeleteUser(ctx, arg); err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusForbidden, errorResponse(err, "User doesn't exist"))
 			return
@@ -80,34 +85,36 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
-type rehashUserRequest struct {
+type rehashUserData struct {
 	OldPassword string `json:"old_password" binding:"required"`
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
 func (s *Server) rehashUser(ctx *gin.Context) {
-	var req rehashUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
-		return
-	}
+	var (
+		req  getUserRequest
+		data rehashUserData
+	)
 
-	id, err := strconv.ParseInt(ctx.Param("id"), 10, 32)
-	if err != nil {
+	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be 32-bit integer"))
 		return
 	}
 
-	arg := db.RehashUserParams{
-		ID:      int32(id),
-		OldHash: hashPass(req.OldPassword),
-		NewHash: hashPass(req.NewPassword),
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
+		return
 	}
 
-	_, err = s.store.RehashUser(ctx, arg)
-	if err != nil {
+	arg := db.RehashUserParams{
+		ID:      req.ID,
+		OldHash: hashPass(data.OldPassword),
+		NewHash: hashPass(data.NewPassword),
+	}
+
+	if _, err := s.store.RehashUser(ctx, arg); err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusForbidden, "Wrong actual password")
+			ctx.JSON(http.StatusForbidden, "Wrong current password")
 			return
 		}
 
