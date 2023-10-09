@@ -79,22 +79,7 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 		return
 	}
 
-	hash, err := util.HashPassword(data.Password)
-	if err != nil {
-		if err == bcrypt.ErrPasswordTooLong {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
-	}
-
-	arg := db.DeleteUserParams{
-		ID:   req.ID,
-		Hash: hash,
-	}
-
-	if _, err := s.store.DeleteUser(ctx, arg); err != nil {
+	if _, err := s.store.DeleteUser(ctx, req.ID); err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusForbidden, errorResponse(err, "User doesn't exist"))
 			return

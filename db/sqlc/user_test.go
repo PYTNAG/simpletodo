@@ -10,12 +10,15 @@ import (
 )
 
 func createRandomUser(t *testing.T) User {
-	addUserArg := AddUserParams{
+	hash, err := util.HashPassword(util.RandomPassword())
+	require.NoError(t, err)
+
+	addUserArg := CreateUserParams{
 		Username: util.RandomUsername(),
-		Hash:     util.RandomByteArray(4),
+		Hash:     hash,
 	}
 
-	user, err := testQueries.AddUser(context.Background(), addUserArg)
+	user, err := testQueries.CreateUser(context.Background(), addUserArg)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
@@ -31,17 +34,13 @@ func createRandomUser(t *testing.T) User {
 }
 
 func deleteTestUser(t *testing.T, u User) {
-	deleteArg := DeleteUserParams{
-		ID:   u.ID,
-		Hash: u.Hash,
-	}
-	r, err := testQueries.DeleteUser(context.Background(), deleteArg)
+	r, err := testQueries.DeleteUser(context.Background(), u.ID)
 
 	require.NoError(t, err)
 	require.Equal(t, DeleteUserRow{ID: u.ID, Username: u.Username}, r)
 }
 
-func TestAddUser(t *testing.T) {
+func TestCreateUser(t *testing.T) {
 	newUser := createRandomUser(t)
 	deleteTestUser(t, newUser)
 }
@@ -49,11 +48,7 @@ func TestAddUser(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	expectedUser := createRandomUser(t)
 
-	arg := GetUserParams{
-		Username: expectedUser.Username,
-		Hash:     expectedUser.Hash,
-	}
-	actualUser, err := testQueries.GetUser(context.Background(), arg)
+	actualUser, err := testQueries.GetUser(context.Background(), expectedUser.Username)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, actualUser)
@@ -69,11 +64,7 @@ func TestDeleteUser(t *testing.T) {
 
 	deleteTestUser(t, newUser)
 
-	getArg := GetUserParams{
-		Username: newUser.Username,
-		Hash:     newUser.Hash,
-	}
-	noUser, err := testQueries.GetUser(context.Background(), getArg)
+	noUser, err := testQueries.GetUser(context.Background(), newUser.Username)
 
 	require.Error(t, err)
 	require.EqualError(t, err, sql.ErrNoRows.Error())
@@ -83,11 +74,14 @@ func TestDeleteUser(t *testing.T) {
 
 func TestRehashUser(t *testing.T) {
 	expectedUser := createRandomUser(t)
+	newHash, err := util.HashPassword(util.RandomPassword())
+
+	require.NoError(t, err)
 
 	arg := RehashUserParams{
 		ID:      expectedUser.ID,
 		OldHash: expectedUser.Hash,
-		NewHash: util.RandomByteArray(8),
+		NewHash: newHash,
 	}
 	actualUser, err := testQueries.RehashUser(context.Background(), arg)
 

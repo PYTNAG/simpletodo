@@ -9,21 +9,22 @@ import (
 	"context"
 )
 
-const addUser = `-- name: AddUser :one
+const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-	username, hash
+	username, 
+	hash
 ) VALUES (
 	$1, $2
 ) RETURNING id, username, hash
 `
 
-type AddUserParams struct {
+type CreateUserParams struct {
 	Username string `json:"username"`
 	Hash     []byte `json:"hash"`
 }
 
-func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, addUser, arg.Username, arg.Hash)
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser, arg.Username, arg.Hash)
 	var i User
 	err := row.Scan(&i.ID, &i.Username, &i.Hash)
 	return i, err
@@ -31,46 +32,31 @@ func (q *Queries) AddUser(ctx context.Context, arg AddUserParams) (User, error) 
 
 const deleteUser = `-- name: DeleteUser :one
 DELETE FROM users
-WHERE id = $1 AND hash = $2
+WHERE id = $1
 RETURNING id, username
 `
-
-type DeleteUserParams struct {
-	ID   int32  `json:"id"`
-	Hash []byte `json:"hash"`
-}
 
 type DeleteUserRow struct {
 	ID       int32  `json:"id"`
 	Username string `json:"username"`
 }
 
-func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) (DeleteUserRow, error) {
-	row := q.db.QueryRowContext(ctx, deleteUser, arg.ID, arg.Hash)
+func (q *Queries) DeleteUser(ctx context.Context, id int32) (DeleteUserRow, error) {
+	row := q.db.QueryRowContext(ctx, deleteUser, id)
 	var i DeleteUserRow
 	err := row.Scan(&i.ID, &i.Username)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, username FROM users
-WHERE username = $1 AND hash = $2 LIMIT 1
+SELECT id, username, hash FROM users
+WHERE username = $1 LIMIT 1
 `
 
-type GetUserParams struct {
-	Username string `json:"username"`
-	Hash     []byte `json:"hash"`
-}
-
-type GetUserRow struct {
-	ID       int32  `json:"id"`
-	Username string `json:"username"`
-}
-
-func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (GetUserRow, error) {
-	row := q.db.QueryRowContext(ctx, getUser, arg.Username, arg.Hash)
-	var i GetUserRow
-	err := row.Scan(&i.ID, &i.Username)
+func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, username)
+	var i User
+	err := row.Scan(&i.ID, &i.Username, &i.Hash)
 	return i, err
 }
 

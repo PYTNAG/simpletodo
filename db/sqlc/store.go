@@ -63,7 +63,7 @@ func (store *SQLStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams)
 		var err error
 
 		// create user
-		result.User, err = q.AddUser(ctx, AddUserParams{
+		result.User, err = q.CreateUser(ctx, CreateUserParams{
 			Username: arg.Username,
 			Hash:     arg.Hash,
 		})

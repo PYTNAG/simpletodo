@@ -12,15 +12,15 @@ import (
 type Querier interface {
 	AddList(ctx context.Context, arg AddListParams) (List, error)
 	AddTask(ctx context.Context, arg AddTaskParams) (Task, error)
-	AddUser(ctx context.Context, arg AddUserParams) (User, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteCheckedRootTasks(ctx context.Context, listID int32) error
 	DeleteList(ctx context.Context, id int32) error
 	DeleteTask(ctx context.Context, id int32) error
-	DeleteUser(ctx context.Context, arg DeleteUserParams) (DeleteUserRow, error)
+	DeleteUser(ctx context.Context, id int32) (DeleteUserRow, error)
 	GetChildTasks(ctx context.Context, parentTask sql.NullInt32) ([]Task, error)
 	GetLists(ctx context.Context, author int32) ([]GetListsRow, error)
 	GetTasks(ctx context.Context, listID int32) ([]Task, error)
-	GetUser(ctx context.Context, arg GetUserParams) (GetUserRow, error)
+	GetUser(ctx context.Context, username string) (User, error)
 	RehashUser(ctx context.Context, arg RehashUserParams) (User, error)
 	UpdateCheckTask(ctx context.Context, arg UpdateCheckTaskParams) error
 	UpdateTaskText(ctx context.Context, arg UpdateTaskTextParams) error

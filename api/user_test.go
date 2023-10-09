@@ -53,7 +53,17 @@ func TestCreateUserAPI(t *testing.T) {
 				}
 
 				store.EXPECT().
-					CreateUserTx(gomock.Any(), gomock.Eq(arg)).
+					CreateUserTx(
+						gomock.Any(),
+						gomock.Cond(func(x any) bool {
+							var params = x.(db.CreateUserTxParams)
+							if err := util.CheckPassword(user.Password, params.Hash); err != nil {
+								return false
+							}
+
+							return params.Username == arg.Username
+						}),
+					).
 					Times(1).
 					Return(res, nil)
 			},
@@ -76,7 +86,17 @@ func TestCreateUserAPI(t *testing.T) {
 				}
 
 				store.EXPECT().
-					CreateUserTx(gomock.Any(), gomock.Eq(arg)).
+					CreateUserTx(
+						gomock.Any(),
+						gomock.Cond(func(x any) bool {
+							var params = x.(db.CreateUserTxParams)
+							if err := util.CheckPassword(user.Password, params.Hash); err != nil {
+								return false
+							}
+
+							return params.Username == arg.Username
+						}),
+					).
 					Times(1).
 					Return(db.CreateUserTxResult{}, sql.ErrNoRows)
 			},
@@ -96,7 +116,17 @@ func TestCreateUserAPI(t *testing.T) {
 				}
 
 				store.EXPECT().
-					CreateUserTx(gomock.Any(), gomock.Eq(arg)).
+					CreateUserTx(
+						gomock.Any(),
+						gomock.Cond(func(x any) bool {
+							var params = x.(db.CreateUserTxParams)
+							if err := util.CheckPassword(user.Password, params.Hash); err != nil {
+								return false
+							}
+
+							return params.Username == arg.Username
+						}),
+					).
 					Times(1).
 					Return(db.CreateUserTxResult{}, sql.ErrConnDone)
 			},
@@ -148,10 +178,14 @@ func randomUser() (fullUserInfo, error) {
 	pass := util.RandomPassword()
 	hash, err := util.HashPassword(pass)
 
+	if err != nil {
+		return fullUserInfo{}, err
+	}
+
 	return fullUserInfo{
 		ID:       util.RandomID(),
 		Username: util.RandomUsername(),
 		Password: pass,
 		Hash:     hash,
-	}, err
+	}, nil
 }

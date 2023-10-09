@@ -18,9 +18,17 @@ func TestCreateUserTx(t *testing.T) {
 
 	for i := 0; i < n; i++ {
 		go func() {
+			hash, err := util.HashPassword(util.RandomPassword())
+
+			if err != nil {
+				errs <- err
+				results <- CreateUserTxResult{}
+				return
+			}
+
 			result, err := store.CreateUserTx(context.Background(), CreateUserTxParams{
 				Username: util.RandomString(24),
-				Hash:     util.RandomByteArray(10),
+				Hash:     hash,
 			})
 
 			errs <- err
@@ -39,10 +47,7 @@ func TestCreateUserTx(t *testing.T) {
 		require.NotEmpty(t, result.User)
 		require.NotZero(t, result.User.ID)
 
-		_, err = store.GetUser(context.Background(), GetUserParams{
-			Username: result.User.Username,
-			Hash:     result.User.Hash,
-		})
+		_, err = store.GetUser(context.Background(), result.User.Username)
 		require.NoError(t, err)
 
 		// check list

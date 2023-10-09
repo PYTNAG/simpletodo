@@ -70,19 +70,19 @@ func (mr *MockStoreMockRecorder) AddTask(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTask", reflect.TypeOf((*MockStore)(nil).AddTask), arg0, arg1)
 }
 
-// AddUser mocks base method.
-func (m *MockStore) AddUser(arg0 context.Context, arg1 db.AddUserParams) (db.User, error) {
+// CreateUser mocks base method.
+func (m *MockStore) CreateUser(arg0 context.Context, arg1 db.CreateUserParams) (db.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddUser", arg0, arg1)
+	ret := m.ctrl.Call(m, "CreateUser", arg0, arg1)
 	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AddUser indicates an expected call of AddUser.
-func (mr *MockStoreMockRecorder) AddUser(arg0, arg1 any) *gomock.Call {
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockStoreMockRecorder) CreateUser(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUser", reflect.TypeOf((*MockStore)(nil).AddUser), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), arg0, arg1)
 }
 
 // CreateUserTx mocks base method.
@@ -143,7 +143,7 @@ func (mr *MockStoreMockRecorder) DeleteTask(arg0, arg1 any) *gomock.Call {
 }
 
 // DeleteUser mocks base method.
-func (m *MockStore) DeleteUser(arg0 context.Context, arg1 db.DeleteUserParams) (db.DeleteUserRow, error) {
+func (m *MockStore) DeleteUser(arg0 context.Context, arg1 int32) (db.DeleteUserRow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteUser", arg0, arg1)
 	ret0, _ := ret[0].(db.DeleteUserRow)
@@ -203,10 +203,10 @@ func (mr *MockStoreMockRecorder) GetTasks(arg0, arg1 any) *gomock.Call {
 }
 
 // GetUser mocks base method.
-func (m *MockStore) GetUser(arg0 context.Context, arg1 db.GetUserParams) (db.GetUserRow, error) {
+func (m *MockStore) GetUser(arg0 context.Context, arg1 string) (db.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUser", arg0, arg1)
-	ret0, _ := ret[0].(db.GetUserRow)
+	ret0, _ := ret[0].(db.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
