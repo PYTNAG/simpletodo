@@ -20,4 +20,9 @@ func TestPassword(t *testing.T) {
 	wrongPassword := RandomPassword()
 	err = CheckPassword(wrongPassword, hash)
 	require.EqualError(t, err, bcrypt.ErrMismatchedHashAndPassword.Error())
+
+	repeatedHash, err := HashPassword(password)
+	require.NoError(t, err)
+	require.NotEmpty(t, repeatedHash)
+	require.NotEqual(t, hash, repeatedHash)
 }
