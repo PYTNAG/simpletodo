@@ -23,7 +23,8 @@ type fullUserInfo struct {
 }
 
 func TestCreateUserAPI(t *testing.T) {
-	user := randomUser()
+	user, err := randomUser()
+	require.NoError(t, err)
 
 	testCases := []struct {
 		name          string
@@ -143,12 +144,14 @@ func TestCreateUserAPI(t *testing.T) {
 	}
 }
 
-func randomUser() fullUserInfo {
+func randomUser() (fullUserInfo, error) {
 	pass := util.RandomPassword()
+	hash, err := util.HashPassword(pass)
+
 	return fullUserInfo{
 		ID:       util.RandomID(),
 		Username: util.RandomUsername(),
 		Password: pass,
-		Hash:     hashPass(pass),
-	}
+		Hash:     hash,
+	}, err
 }

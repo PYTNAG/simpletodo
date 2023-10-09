@@ -5,14 +5,16 @@ import (
 	"net/http"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	"github.com/PYTNAG/simpletodo/util"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type getUserRequest struct {
 	ID int32 `uri:"id" binding:"required,min=1"`
 }
 
-type createUserRequest struct {
+type createUserData struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
@@ -22,15 +24,25 @@ type createUserResponse struct {
 }
 
 func (s *Server) createUser(ctx *gin.Context) {
-	var req createUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	var data createUserData
+	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
 		return
 	}
 
+	hash, err := util.HashPassword(data.Password)
+	if err != nil {
+		if err == bcrypt.ErrPasswordTooLong {
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+	}
+
 	arg := db.CreateUserTxParams{
-		Username: req.Username,
-		Hash:     hashPass(req.Password),
+		Username: data.Username,
+		Hash:     hash,
 	}
 
 	result, err := s.store.CreateUserTx(ctx, arg)
@@ -67,9 +79,19 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 		return
 	}
 
+	hash, err := util.HashPassword(data.Password)
+	if err != nil {
+		if err == bcrypt.ErrPasswordTooLong {
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+	}
+
 	arg := db.DeleteUserParams{
 		ID:   req.ID,
-		Hash: hashPass(data.Password),
+		Hash: hash,
 	}
 
 	if _, err := s.store.DeleteUser(ctx, arg); err != nil {
@@ -106,10 +128,30 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 		return
 	}
 
+	oldHash, err := util.HashPassword(data.OldPassword)
+	if err != nil {
+		if err == bcrypt.ErrPasswordTooLong {
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+	}
+
+	newHash, err := util.HashPassword(data.NewPassword)
+	if err != nil {
+		if err == bcrypt.ErrPasswordTooLong {
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+	}
+
 	arg := db.RehashUserParams{
 		ID:      req.ID,
-		OldHash: hashPass(data.OldPassword),
-		NewHash: hashPass(data.NewPassword),
+		OldHash: oldHash,
+		NewHash: newHash,
 	}
 
 	if _, err := s.store.RehashUser(ctx, arg); err != nil {
@@ -123,8 +165,4 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusNoContent, nil)
-}
-
-func hashPass(pass string) []byte {
-	return []byte(pass) // TODO : replace with [b/s]crypt alg
 }
