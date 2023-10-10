@@ -68,7 +68,7 @@ func TestCreateUserAPI(t *testing.T) {
 					Return(res, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				gotResult := util.Unmarshal[createUserResponse](t, recorder.Body)
+				gotResult := util.Unmarshal[userResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
 				require.GreaterOrEqual(t, gotResult.ID, int32(1))
@@ -160,7 +160,7 @@ func TestCreateUserAPI(t *testing.T) {
 			tc.buildStubs(store)
 
 			// start test server and send request
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 
 			request, err := http.NewRequest(http.MethodPost, "/users", tc.body(user))

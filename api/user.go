@@ -19,7 +19,7 @@ type createUserData struct {
 	Password string `json:"password" binding:"required"`
 }
 
-type createUserResponse struct {
+type userResponse struct {
 	ID int32 `json:"id"`
 }
 
@@ -56,7 +56,7 @@ func (s *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, createUserResponse{ID: result.User.ID}) // TODO: return auth token
+	ctx.JSON(http.StatusCreated, userResponse{ID: result.User.ID}) // TODO: return auth token
 }
 
 type deleteUserData struct {
@@ -150,4 +150,52 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusNoContent, nil)
+}
+
+type loginUserData struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type loginUserResponse struct {
+	AccessToken string       `json:"access_token"`
+	User        userResponse `json:"user"`
+}
+
+func (server *Server) loginUser(ctx *gin.Context) {
+	var data loginUserData
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
+		return
+	}
+
+	user, err := server.store.GetUser(ctx, data.Username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusNotFound, errorResponse(err, "There is no user with username "+data.Username))
+			return
+		}
+
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+		return
+	}
+
+	err = util.CheckPassword(data.Password, user.Hash)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err, "Wrong password"))
+		return
+	}
+
+	accesToken, err := server.pasetoMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+		return
+	}
+
+	response := loginUserResponse{
+		AccessToken: accesToken,
+		User:        userResponse{ID: user.ID},
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }

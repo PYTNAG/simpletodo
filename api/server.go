@@ -1,23 +1,45 @@
 package api
 
 import (
+	"fmt"
+
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	"github.com/PYTNAG/simpletodo/token"
+	"github.com/PYTNAG/simpletodo/util"
 	"github.com/gin-gonic/gin"
 )
 
 // Server servers HTTP req-s for todo app
 type Server struct {
-	store  db.Store
-	router *gin.Engine
+	config      util.Config
+	store       db.Store
+	pasetoMaker *token.PasetoMaker
+	router      *gin.Engine
 }
 
 // NewServer creates a new HTTP server and setup routing
-func NewServer(store db.Store) *Server {
-	server := &Server{store: store}
+func NewServer(config util.Config, store db.Store) (*Server, error) {
+	pasetoMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot create token maker: %w", err)
+	}
 
+	server := &Server{
+		config:      config,
+		store:       store,
+		pasetoMaker: pasetoMaker,
+	}
+
+	server.setupRouter()
+
+	return server, nil
+}
+
+func (server *Server) setupRouter() {
 	router := gin.Default()
 
 	router.POST("/users", server.createUser)
+	router.POST("/users/login", server.loginUser)
 	router.PUT("/users/:id", server.rehashUser)
 	router.DELETE("/users/:id", server.deleteUser)
 
@@ -25,7 +47,6 @@ func NewServer(store db.Store) *Server {
 	router.POST("/users/:id/lists", server.addListToUser)
 
 	server.router = router
-	return server
 }
 
 func (s *Server) Start(address string) error {
