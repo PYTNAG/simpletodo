@@ -2,25 +2,27 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	"github.com/PYTNAG/simpletodo/token"
 	"github.com/PYTNAG/simpletodo/util"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type getUserRequest struct {
-	ID int32 `uri:"id" binding:"required,min=1"`
+	ID int32 `uri:"id" binding:"required,number,min=1"`
+}
+
+type userResponse struct {
+	ID int32 `json:"user_id"`
 }
 
 type createUserData struct {
 	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
-type userResponse struct {
-	ID int32 `json:"id"`
+	Password string `json:"password" binding:"required,printascii,min=8"`
 }
 
 func (s *Server) createUser(ctx *gin.Context) {
@@ -40,12 +42,14 @@ func (s *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 	}
 
-	arg := db.CreateUserTxParams{
-		Username: data.Username,
-		Hash:     hash,
-	}
+	result, err := s.store.CreateUserTx(
+		ctx,
+		db.CreateUserTxParams{
+			Username: data.Username,
+			Hash:     hash,
+		},
+	)
 
-	result, err := s.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusForbidden, errorResponse(err, "User already exist"))
@@ -56,11 +60,11 @@ func (s *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, userResponse{ID: result.User.ID}) // TODO: return auth token
+	ctx.JSON(http.StatusCreated, userResponse{ID: result.User.ID})
 }
 
 type deleteUserData struct {
-	Password string `json:"password" binding:"required"`
+	Password string `json:"password" binding:"required,printascii,min=8"`
 }
 
 func (s *Server) deleteUser(ctx *gin.Context) {
@@ -70,12 +74,25 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be positive integer and greater than 0"))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be positive integer"))
 		return
 	}
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
+		return
+	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(token.Payload)
+	user, err := s.store.GetUser(ctx, authPayload.Username)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+		return
+	}
+
+	if user.ID != req.ID {
+		err := fmt.Errorf("You can't delete other user")
+		ctx.JSON(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -104,7 +121,7 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 	)
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be 32-bit integer"))
+		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be positive integer"))
 		return
 	}
 
@@ -141,7 +158,7 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 
 	if _, err := s.store.RehashUser(ctx, arg); err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusForbidden, "Wrong current password")
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "Wrong user id or actual password"))
 			return
 		}
 
@@ -158,8 +175,8 @@ type loginUserData struct {
 }
 
 type loginUserResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        userResponse `json:"user"`
+	AccessToken string `json:"access_token"`
+	ID          int32  `json:"user_id"`
 }
 
 func (server *Server) loginUser(ctx *gin.Context) {
@@ -172,7 +189,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	user, err := server.store.GetUser(ctx, data.Username)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err, "There is no user with username "+data.Username))
+			ctx.JSON(http.StatusNotFound, errorResponse(err, fmt.Sprintf("There is no user with username %s", data.Username)))
 			return
 		}
 
@@ -194,7 +211,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 
 	response := loginUserResponse{
 		AccessToken: accesToken,
-		User:        userResponse{ID: user.ID},
+		ID:          user.ID,
 	}
 
 	ctx.JSON(http.StatusOK, response)
