@@ -34,12 +34,8 @@ func (s *Server) createUser(ctx *gin.Context) {
 
 	hash, err := util.HashPassword(data.Password)
 	if err != nil {
-		if err == bcrypt.ErrPasswordTooLong {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+		ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
+		return
 	}
 
 	result, err := s.store.CreateUserTx(
@@ -83,7 +79,7 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 		return
 	}
 
-	authPayload := ctx.MustGet(authorizationPayloadKey).(token.Payload)
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 	user, err := s.store.GetUser(ctx, authPayload.Username)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
