@@ -154,6 +154,24 @@ func TestCreateUserAPI(t *testing.T) {
 			},
 		},
 		{
+			name: "Too long password",
+			body: gin.H{
+				"username": user.Username,
+				"password": util.RandomString(73),
+			},
+			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateUserTx(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusForbidden, recorder.Code)
+			},
+		},
+		{
 			name: "Invalid Request Data",
 			body: gin.H{},
 			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
@@ -189,6 +207,154 @@ func TestCreateUserAPI(t *testing.T) {
 			require.NoError(t, err)
 
 			tc.setupAuth(t, request, server.pasetoMaker)
+
+			server.router.ServeHTTP(recorder, request)
+
+			tc.checkResponse(t, recorder)
+		})
+	}
+}
+
+func TestDeleteUserAPI(t *testing.T) {
+	user, _ := randomUser()
+	wrongUser, _ := randomUser()
+
+	testCases := []struct {
+		name          string
+		idRequest     int32
+		body          gin.H
+		authSetup     func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker)
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
+	}{
+		{
+			name:      "OK",
+			idRequest: user.ID,
+			body: gin.H{
+				"password": user.Password,
+			},
+			authSetup: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				getResult := db.User{
+					ID:       user.ID,
+					Username: user.Username,
+					Hash:     user.Hash,
+				}
+
+				deleteResult := db.DeleteUserRow{
+					ID:       user.ID,
+					Username: user.Username,
+				}
+
+				getUserCall := store.EXPECT().
+					GetUser(gomock.Any(), gomock.Eq(user.Username)).
+					Times(1).
+					Return(getResult, nil)
+
+				store.EXPECT().
+					DeleteUser(gomock.Any(), gomock.Eq(user.ID)).
+					Times(1).
+					Return(deleteResult, nil).
+					After(getUserCall)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusNoContent, recorder.Code)
+			},
+		},
+		{
+			name:      "Wrong ID",
+			idRequest: -1,
+			body:      gin.H{},
+			authSetup: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				getUserCall := store.EXPECT().
+					GetUser(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					DeleteUser(gomock.Any(), gomock.Any()).
+					Times(0).
+					After(getUserCall)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+		{
+			name: "Wrong body request",
+			body: gin.H{},
+			authSetup: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				getUserCall := store.EXPECT().
+					GetUser(gomock.Any(), gomock.Any()).
+					Times(0)
+
+				store.EXPECT().
+					DeleteUser(gomock.Any(), gomock.Any()).
+					Times(0).
+					After(getUserCall)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+		{
+			name:      "Wrong user",
+			idRequest: user.ID,
+			body: gin.H{
+				"password": user.Password,
+			},
+			authSetup: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, wrongUser.Username, time.Minute)
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				getResult := db.User{
+					ID:       wrongUser.ID,
+					Username: wrongUser.Username,
+					Hash:     wrongUser.Hash,
+				}
+
+				getUserCall := store.EXPECT().
+					GetUser(gomock.Any(), gomock.Eq(wrongUser.Username)).
+					Times(1).
+					Return(getResult, nil)
+
+				store.EXPECT().
+					DeleteUser(gomock.Any(), gomock.Any()).
+					Times(0).
+					After(getUserCall)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			server := newTestServer(t, store)
+			recorder := httptest.NewRecorder()
+
+			data, err := json.Marshal(tc.body)
+			require.NoError(t, err)
+
+			url := fmt.Sprintf("/users/%d", user.ID)
+			request, err := http.NewRequest(http.MethodDelete, url, bytes.NewReader(data))
+			require.NoError(t, err)
+
+			tc.authSetup(t, request, server.pasetoMaker)
 
 			server.router.ServeHTTP(recorder, request)
 
