@@ -3,14 +3,19 @@ package api
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
+	"time"
 
 	mockdb "github.com/PYTNAG/simpletodo/db/mock"
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	"github.com/PYTNAG/simpletodo/token"
 	"github.com/PYTNAG/simpletodo/util"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -22,23 +27,59 @@ type fullUserInfo struct {
 	Hash     []byte `json:"hash"`
 }
 
+type eqCreateUserTxParamsMatcher struct {
+	params   db.CreateUserTxParams
+	password string
+}
+
+func (e eqCreateUserTxParamsMatcher) Matches(x any) bool {
+	params, ok := x.(db.CreateUserTxParams)
+	if !ok {
+		return false
+	}
+
+	err := util.CheckPassword(e.password, params.Hash)
+	if err != nil {
+		return false
+	}
+
+	e.params.Hash = params.Hash
+	return reflect.DeepEqual(e.params, params)
+}
+
+func (e eqCreateUserTxParamsMatcher) String() string {
+	return fmt.Sprintf("matches params %v and password %v", e.params, e.password)
+}
+
+func EqCreateUserTxParams(params db.CreateUserTxParams, password string) gomock.Matcher {
+	return eqCreateUserTxParamsMatcher{
+		params:   params,
+		password: password,
+	}
+}
+
 func TestCreateUserAPI(t *testing.T) {
 	user, err := randomUser()
 	require.NoError(t, err)
 
 	testCases := []struct {
 		name          string
-		body          func(user fullUserInfo) *bytes.Buffer
+		body          gin.H
+		setupAuth     func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Created",
-			body: func(user fullUserInfo) *bytes.Buffer {
-				return bytes.NewBufferString(fmt.Sprintf(`{"username": "%s", "password": "%s"}`, user.Username, user.Password))
+			body: gin.H{
+				"username": user.Username,
+				"password": user.Password,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				arg := db.CreateUserTxParams{
+				params := db.CreateUserTxParams{
 					Username: user.Username,
 					Hash:     user.Hash,
 				}
@@ -53,17 +94,7 @@ func TestCreateUserAPI(t *testing.T) {
 				}
 
 				store.EXPECT().
-					CreateUserTx(
-						gomock.Any(),
-						gomock.Cond(func(x any) bool {
-							var params = x.(db.CreateUserTxParams)
-							if err := util.CheckPassword(user.Password, params.Hash); err != nil {
-								return false
-							}
-
-							return params.Username == arg.Username
-						}),
-					).
+					CreateUserTx(gomock.Any(), EqCreateUserTxParams(params, user.Password)).
 					Times(1).
 					Return(res, nil)
 			},
@@ -71,32 +102,26 @@ func TestCreateUserAPI(t *testing.T) {
 				gotResult := util.Unmarshal[userResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
-				require.GreaterOrEqual(t, gotResult.ID, int32(1))
+				require.Greater(t, gotResult.ID, int32(0))
 			},
 		},
 		{
-			name: "Forbiden/UserAlreadyExist",
-			body: func(user fullUserInfo) *bytes.Buffer {
-				return bytes.NewBufferString(fmt.Sprintf(`{"username": "%s", "password": "%s"}`, user.Username, user.Password))
+			name: "UserAlreadyExist",
+			body: gin.H{
+				"username": user.Username,
+				"password": user.Password,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				arg := db.CreateUserTxParams{
+				params := db.CreateUserTxParams{
 					Username: user.Username,
 					Hash:     user.Hash,
 				}
 
 				store.EXPECT().
-					CreateUserTx(
-						gomock.Any(),
-						gomock.Cond(func(x any) bool {
-							var params = x.(db.CreateUserTxParams)
-							if err := util.CheckPassword(user.Password, params.Hash); err != nil {
-								return false
-							}
-
-							return params.Username == arg.Username
-						}),
-					).
+					CreateUserTx(gomock.Any(), EqCreateUserTxParams(params, user.Password)).
 					Times(1).
 					Return(db.CreateUserTxResult{}, sql.ErrNoRows)
 			},
@@ -106,27 +131,21 @@ func TestCreateUserAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			body: func(user fullUserInfo) *bytes.Buffer {
-				return bytes.NewBufferString(fmt.Sprintf(`{"username": "%s", "password": "%s"}`, user.Username, user.Password))
+			body: gin.H{
+				"username": user.Username,
+				"password": user.Password,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				arg := db.CreateUserTxParams{
+				params := db.CreateUserTxParams{
 					Username: user.Username,
 					Hash:     user.Hash,
 				}
 
 				store.EXPECT().
-					CreateUserTx(
-						gomock.Any(),
-						gomock.Cond(func(x any) bool {
-							var params = x.(db.CreateUserTxParams)
-							if err := util.CheckPassword(user.Password, params.Hash); err != nil {
-								return false
-							}
-
-							return params.Username == arg.Username
-						}),
-					).
+					CreateUserTx(gomock.Any(), EqCreateUserTxParams(params, user.Password)).
 					Times(1).
 					Return(db.CreateUserTxResult{}, sql.ErrConnDone)
 			},
@@ -136,8 +155,9 @@ func TestCreateUserAPI(t *testing.T) {
 		},
 		{
 			name: "Invalid Request Data",
-			body: func(user fullUserInfo) *bytes.Buffer {
-				return bytes.NewBufferString("{}")
+			body: gin.H{},
+			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -156,16 +176,19 @@ func TestCreateUserAPI(t *testing.T) {
 			defer ctrl.Finish()
 
 			store := mockdb.NewMockStore(ctrl)
-
 			tc.buildStubs(store)
 
-			// start test server and send request
 			server := newTestServer(t, store)
+
 			recorder := httptest.NewRecorder()
 
-			request, err := http.NewRequest(http.MethodPost, "/users", tc.body(user))
-
+			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
+
+			request, err := http.NewRequest(http.MethodPost, "/users", bytes.NewReader(data))
+			require.NoError(t, err)
+
+			tc.setupAuth(t, request, server.pasetoMaker)
 
 			server.router.ServeHTTP(recorder, request)
 
