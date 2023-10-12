@@ -74,26 +74,14 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 		return
 	}
 
+	code, errResponse := s.compareRequestedIdWithAuthUser(ctx, req.ID)
+	if len(errResponse) != 0 {
+		ctx.JSON(code, errorResponse)
+		return
+	}
+
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
-		return
-	}
-
-	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-	user, err := s.store.GetUser(ctx, authPayload.Username)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "Authorized user doesn't exist"))
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
-		return
-	}
-
-	if user.ID != req.ID {
-		err := fmt.Errorf("You can't delete other user")
-		ctx.JSON(http.StatusUnauthorized, err)
 		return
 	}
 
@@ -123,6 +111,12 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be positive integer"))
+		return
+	}
+
+	code, errResponse := s.compareRequestedIdWithAuthUser(ctx, req.ID)
+	if len(errResponse) != 0 {
+		ctx.JSON(code, errResponse)
 		return
 	}
 
@@ -216,4 +210,23 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+func (s *Server) compareRequestedIdWithAuthUser(ctx *gin.Context, requestedId int32) (code int, errResponse gin.H) {
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	user, err := s.store.GetUser(ctx, authPayload.Username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return http.StatusForbidden, errorResponse(err, "Authorized user doesn't exist")
+		}
+
+		return http.StatusInternalServerError, errorResponse(err, "")
+	}
+
+	if user.ID != requestedId {
+		err := fmt.Errorf("You can't delete other user")
+		return http.StatusUnauthorized, errorResponse(err, "")
+	}
+
+	return 0, gin.H{}
 }

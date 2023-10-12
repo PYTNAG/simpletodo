@@ -97,8 +97,9 @@ func TestDeleteUserAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), gomock.Any()).
-					Times(0)
+					GetUser(gomock.Any(), gomock.Eq(user.Username)).
+					Times(1).
+					Return(db.User{ID: user.ID}, nil)
 
 				store.EXPECT().
 					DeleteUser(gomock.Any(), gomock.Any()).
