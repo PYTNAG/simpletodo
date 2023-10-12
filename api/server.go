@@ -48,6 +48,7 @@ func (server *Server) setupRouter() {
 
 	authRoutes.GET("/users/:id/lists", server.getUserLists)
 	authRoutes.POST("/users/:id/lists", server.addListToUser)
+	authRoutes.DELETE("/users/:user_id/lists/:list_id", server.deleteUserList)
 
 	server.router = router
 }
