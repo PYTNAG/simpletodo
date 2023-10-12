@@ -82,6 +82,11 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 	user, err := s.store.GetUser(ctx, authPayload.Username)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "Authorized user doesn't exist"))
+			return
+		}
+
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}

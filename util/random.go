@@ -8,6 +8,13 @@ import (
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz_()!$"
 
+type FullUserInfo struct {
+	ID       int32  `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Hash     []byte `json:"hash"`
+}
+
 func init() {
 	rand.Seed(time.Now().UnixNano())
 }
@@ -43,4 +50,20 @@ func RandomID() int32 {
 	}
 
 	return res
+}
+
+func RandomUser() (FullUserInfo, error) {
+	pass := RandomPassword()
+	hash, err := HashPassword(pass)
+
+	if err != nil {
+		return FullUserInfo{}, err
+	}
+
+	return FullUserInfo{
+		ID:       RandomID(),
+		Username: RandomUsername(),
+		Password: pass,
+		Hash:     hash,
+	}, nil
 }
