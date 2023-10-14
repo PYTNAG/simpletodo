@@ -6,15 +6,10 @@ import (
 	"net/http"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
-	"github.com/PYTNAG/simpletodo/token"
 	"github.com/PYTNAG/simpletodo/util"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
-
-type getUserRequest struct {
-	ID int32 `uri:"id" binding:"required,number,min=1"`
-}
 
 type userResponse struct {
 	ID int32 `json:"user_id"`
@@ -48,7 +43,7 @@ func (s *Server) createUser(ctx *gin.Context) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "User already exist"))
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "User "+data.Username+" already exist"))
 			return
 		}
 
@@ -64,28 +59,16 @@ type deleteUserData struct {
 }
 
 func (s *Server) deleteUser(ctx *gin.Context) {
-	var (
-		req  getUserRequest
-		data deleteUserData
-	)
+	userId := ctx.MustGet("user_id").(int32)
 
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be positive integer"))
-		return
-	}
-
-	code, errResponse := s.compareRequestedIdWithAuthUser(ctx, req.ID)
-	if len(errResponse) != 0 {
-		ctx.JSON(code, errorResponse)
-		return
-	}
+	var data deleteUserData
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
 		return
 	}
 
-	if _, err := s.store.DeleteUser(ctx, req.ID); err != nil {
+	if _, err := s.store.DeleteUser(ctx, userId); err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusForbidden, errorResponse(err, "User doesn't exist"))
 			return
@@ -104,21 +87,9 @@ type rehashUserData struct {
 }
 
 func (s *Server) rehashUser(ctx *gin.Context) {
-	var (
-		req  getUserRequest
-		data rehashUserData
-	)
+	userId := ctx.MustGet("user_id").(int32)
 
-	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err, "Id must be positive integer"))
-		return
-	}
-
-	code, errResponse := s.compareRequestedIdWithAuthUser(ctx, req.ID)
-	if len(errResponse) != 0 {
-		ctx.JSON(code, errResponse)
-		return
-	}
+	var data rehashUserData
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
@@ -146,7 +117,7 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 	}
 
 	arg := db.RehashUserParams{
-		ID:      req.ID,
+		ID:      userId,
 		OldHash: oldHash,
 		NewHash: newHash,
 	}
@@ -210,23 +181,4 @@ func (server *Server) loginUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response)
-}
-
-func (s *Server) compareRequestedIdWithAuthUser(ctx *gin.Context, requestedId int32) (code int, errResponse gin.H) {
-	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-	user, err := s.store.GetUser(ctx, authPayload.Username)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return http.StatusForbidden, errorResponse(err, "Authorized user doesn't exist")
-		}
-
-		return http.StatusInternalServerError, errorResponse(err, "")
-	}
-
-	if user.ID != requestedId {
-		err := fmt.Errorf("You can't delete other user")
-		return http.StatusUnauthorized, errorResponse(err, "")
-	}
-
-	return 0, gin.H{}
 }
