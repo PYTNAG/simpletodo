@@ -59,7 +59,7 @@ type deleteUserData struct {
 }
 
 func (s *Server) deleteUser(ctx *gin.Context) {
-	userId := ctx.MustGet("user_id").(int32)
+	userId := ctx.MustGet(userIdKey).(int32)
 
 	var data deleteUserData
 
@@ -87,7 +87,7 @@ type rehashUserData struct {
 }
 
 func (s *Server) rehashUser(ctx *gin.Context) {
-	userId := ctx.MustGet("user_id").(int32)
+	userId := ctx.MustGet(userIdKey).(int32)
 
 	var data rehashUserData
 

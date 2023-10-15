@@ -9,6 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	userIdKey = "user_id"
+	listIdKey = "list_id"
+	taskIdKey = "task_key"
+)
+
 // Server servers HTTP req-s for todo app
 type Server struct {
 	config      util.Config
@@ -45,7 +51,6 @@ func (server *Server) setupRouter() {
 	authRoutes := router.Group("/")
 	authRoutes.Use(authMiddleware(*server.pasetoMaker))
 
-	const userIdKey = "user_id"
 	userRequestRoutes := server.getNewIdRequestGroup(authRoutes, "/users/:%s", userIdKey)
 	userRequestRoutes.Use(compareRequestedIdMiddleware(server.store, userIdKey))
 
@@ -56,7 +61,7 @@ func (server *Server) setupRouter() {
 	userRequestRoutes.GET("/lists", server.getUserLists)
 	userRequestRoutes.POST("/lists", server.addListToUser)
 
-	listRequestRoutes := server.getNewIdRequestGroup(authRoutes, "/lists/:%s", "list_id")
+	listRequestRoutes := server.getNewIdRequestGroup(authRoutes, "/lists/:%s", listIdKey)
 
 	listRequestRoutes.DELETE("", server.deleteUserList)
 
@@ -64,7 +69,7 @@ func (server *Server) setupRouter() {
 	listRequestRoutes.GET("/tasks", server.getTasks)
 	listRequestRoutes.POST("/tasks", server.addTask)
 
-	taskRequestRoutes := server.getNewIdRequestGroup(authRoutes, "/tasks/:%s", "task_id")
+	taskRequestRoutes := server.getNewIdRequestGroup(authRoutes, "/tasks/:%s", taskIdKey)
 
 	taskRequestRoutes.PUT("", server.updateTask)
 	taskRequestRoutes.DELETE("", server.deleteTask)

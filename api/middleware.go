@@ -75,10 +75,10 @@ func idRequestMiddleware(key string) gin.HandlerFunc {
 	}
 }
 
-func compareRequestedIdMiddleware(store db.Store, userIdKey string) gin.HandlerFunc {
+func compareRequestedIdMiddleware(store db.Store) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-		requestedUserId := ctx.MustGet(userIdKey)
+		requestedUserId := ctx.MustGet(userIdKey).(int32)
 
 		user, err := store.GetUser(ctx, authPayload.Username)
 		if err != nil {
@@ -98,5 +98,63 @@ func compareRequestedIdMiddleware(store db.Store, userIdKey string) gin.HandlerF
 		}
 
 		ctx.Next()
+	}
+}
+
+func checkListAuthorMiddleware(store db.Store) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		requestedUserId := ctx.MustGet(userIdKey).(int32)
+		requestedListId := ctx.MustGet(listIdKey).(int32)
+
+		userLists, err := store.GetLists(ctx, requestedUserId)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				ctx.AbortWithStatusJSON(http.StatusForbidden, errorResponse(err, fmt.Sprintf("User %d doesn't have any lists", requestedUserId)))
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err, ""))
+			return
+		}
+
+		for _, list := range userLists {
+			if list.ID == requestedListId {
+				ctx.Next()
+				return
+			}
+		}
+
+		err = fmt.Errorf("User %d doesn't have list %d", requestedUserId, requestedListId)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err, ""))
+	}
+}
+
+func checkTaskParentList(store db.Store) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		requestedUserId := ctx.MustGet(userIdKey).(int32)
+		requestedListId := ctx.MustGet(listIdKey).(int32)
+		requestedTaskId := ctx.MustGet(taskIdKey).(int32)
+
+		tasks, err := store.GetTasks(ctx, requestedListId)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				additionalMsg := fmt.Sprintf("User %d doesn't have any tasks in list %d", requestedUserId, requestedListId)
+				ctx.AbortWithStatusJSON(http.StatusForbidden, errorResponse(err, additionalMsg))
+				return
+			}
+
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse(err, ""))
+			return
+		}
+
+		for _, task := range tasks {
+			if task.ListID == requestedListId {
+				ctx.Next()
+				return
+			}
+		}
+
+		err = fmt.Errorf("User %d doesn't have task %d in list %d", requestedUserId, requestedTaskId, requestedListId)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err, ""))
 	}
 }
