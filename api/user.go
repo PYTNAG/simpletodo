@@ -8,7 +8,6 @@ import (
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
 	"github.com/PYTNAG/simpletodo/util"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type userResponse struct {
@@ -98,22 +97,12 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 
 	oldHash, err := util.HashPassword(data.OldPassword)
 	if err != nil {
-		if err == bcrypt.ErrPasswordTooLong {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Maximum length of password is 72 bytes"))
 	}
 
 	newHash, err := util.HashPassword(data.NewPassword)
 	if err != nil {
-		if err == bcrypt.ErrPasswordTooLong {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
-			return
-		}
-
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Maximum length of password is 72 bytes"))
 	}
 
 	arg := db.RehashUserParams{
