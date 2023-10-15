@@ -44,33 +44,32 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
-	// user
-	router.POST("/users", server.createUser)
-	router.POST("/users/login", server.loginUser)
-
 	authRoutes := router.Group("/")
 	authRoutes.Use(authMiddleware(*server.pasetoMaker))
 
 	userRequestRoutes := server.getNewIdRequestGroup(authRoutes, "/users/:%s", userIdKey)
-	userRequestRoutes.Use(compareRequestedIdMiddleware(server.store, userIdKey))
+	userRequestRoutes.Use(compareRequestedIdMiddleware(server.store))
 
+	listRequestRoutes := server.getNewIdRequestGroup(userRequestRoutes, "/lists/:%s", listIdKey)
+	listRequestRoutes.Use(checkListAuthorMiddleware(server.store))
+
+	taskRequestRoutes := server.getNewIdRequestGroup(listRequestRoutes, "/tasks/:%s", taskIdKey)
+	taskRequestRoutes.Use(checkTaskParentList(server.store))
+
+	// user
+	router.POST("/users", server.createUser)
+	router.POST("/users/login", server.loginUser)
 	userRequestRoutes.PUT("", server.rehashUser)
 	userRequestRoutes.DELETE("", server.deleteUser)
 
 	// lists
 	userRequestRoutes.GET("/lists", server.getUserLists)
 	userRequestRoutes.POST("/lists", server.addListToUser)
-
-	listRequestRoutes := server.getNewIdRequestGroup(authRoutes, "/lists/:%s", listIdKey)
-
 	listRequestRoutes.DELETE("", server.deleteUserList)
 
 	// tasks
 	listRequestRoutes.GET("/tasks", server.getTasks)
 	listRequestRoutes.POST("/tasks", server.addTask)
-
-	taskRequestRoutes := server.getNewIdRequestGroup(authRoutes, "/tasks/:%s", taskIdKey)
-
 	taskRequestRoutes.PUT("", server.updateTask)
 	taskRequestRoutes.DELETE("", server.deleteTask)
 
