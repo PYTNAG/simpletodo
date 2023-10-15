@@ -16,6 +16,7 @@ func (s *Server) addListToUser(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
+		return
 	}
 
 	arg := db.AddListParams{
@@ -28,7 +29,7 @@ func (s *Server) addListToUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusNoContent, nil)
+	ctx.JSON(http.StatusCreated, nil)
 }
 
 func (s *Server) getUserLists(ctx *gin.Context) {
