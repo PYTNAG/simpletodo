@@ -162,7 +162,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 
 	accesToken, err := server.pasetoMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
 		return
 	}
 
