@@ -1,15 +1,22 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
+	mockdb "github.com/PYTNAG/simpletodo/db/mock"
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
 	"github.com/PYTNAG/simpletodo/token"
 	"github.com/PYTNAG/simpletodo/util"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func newTestServer(t *testing.T, store db.Store) *Server {
@@ -27,4 +34,87 @@ func newTestServer(t *testing.T, store db.Store) *Server {
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 	os.Exit(m.Run())
+}
+
+type setupAuthFunc func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker)
+type buildStubsFunc func(store *mockdb.MockStore)
+type checkResponseFunc func(t *testing.T, recorder *httptest.ResponseRecorder)
+
+type testCase interface {
+	handlers() *testHandlers
+	method() string
+	body() requestBody
+	url() string
+}
+
+type testHandlers struct {
+	setupAuth     setupAuthFunc
+	buildStubs    buildStubsFunc
+	checkResponse checkResponseFunc
+}
+
+func testingFunc(tc testCase) func(*testing.T) {
+	handlers := tc.handlers()
+	return func(t *testing.T) {
+		t.Parallel()
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		store := mockdb.NewMockStore(ctrl)
+		handlers.buildStubs(store)
+
+		server := newTestServer(t, store)
+
+		recorder := httptest.NewRecorder()
+
+		body := tc.body()
+		var data []byte = nil
+
+		if body != nil {
+			var err error
+			data, err = json.Marshal(tc.body())
+			require.NoError(t, err)
+		}
+
+		request, err := http.NewRequest(tc.method(), tc.url(), bytes.NewReader(data))
+		require.NoError(t, err)
+
+		handlers.setupAuth(t, request, server.pasetoMaker)
+
+		server.router.ServeHTTP(recorder, request)
+
+		handlers.checkResponse(t, recorder)
+	}
+}
+
+func requierResponseCode(code int) checkResponseFunc {
+	return func(t *testing.T, recorder *httptest.ResponseRecorder) {
+		require.Equal(t, code, recorder.Code)
+	}
+}
+
+type requestBody gin.H
+
+func (body requestBody) replace(key string, newValue any) requestBody {
+	newBody := make(requestBody, len(body))
+
+	if _, ok := body[key]; !ok {
+		panic(fmt.Errorf("Body doesn't have field %s", key))
+	}
+
+	for field, value := range body {
+		if field == key {
+			newBody[field] = newValue
+			continue
+		}
+
+		newBody[field] = value
+	}
+
+	return newBody
+}
+
+func emptyRequestBody() requestBody {
+	return requestBody{}
 }
