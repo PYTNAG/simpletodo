@@ -97,13 +97,13 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 
 	oldHash, err := util.HashPassword(data.OldPassword)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Maximum length of password is 72 bytes"))
+		ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
 		return
 	}
 
 	newHash, err := util.HashPassword(data.NewPassword)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Maximum length of password is 72 bytes"))
+		ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
 		return
 	}
 
