@@ -32,6 +32,10 @@ func (s *Server) addListToUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, nil)
 }
 
+type getUserListsResponse struct {
+	Lists []db.GetListsRow `json:"lists"`
+}
+
 func (s *Server) getUserLists(ctx *gin.Context) {
 	lists, err := s.store.GetLists(ctx, ctx.MustGet(userIdKey).(int32))
 	if err != nil {
@@ -39,7 +43,7 @@ func (s *Server) getUserLists(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, lists)
+	ctx.JSON(http.StatusOK, getUserListsResponse{Lists: lists})
 }
 
 func (s *Server) deleteUserList(ctx *gin.Context) {
