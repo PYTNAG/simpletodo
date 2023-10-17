@@ -161,3 +161,13 @@ func getUserCall(store *mockdb.MockStore, user util.FullUserInfo) *gomock.Call {
 		Times(1).
 		Return(getUserResult, nil)
 }
+
+func getListsCall(store *mockdb.MockStore, userId int32, returnedListId int32) *gomock.Call {
+	return store.EXPECT().
+		GetLists(gomock.Any(), gomock.Eq(userId)).
+		Times(1).
+		Return(
+			[]db.GetListsRow{
+				{ID: returnedListId},
+			}, nil)
+}
