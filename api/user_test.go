@@ -223,27 +223,16 @@ func TestDeleteUserAPI(t *testing.T) {
 			requestBody:      defaultSettings.body,
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
 				deleteResult := db.DeleteUserRow{
 					ID:       user.ID,
 					Username: user.Username,
 				}
 
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), gomock.Eq(user.Username)).
-					Times(1).
-					Return(getResult, nil)
-
 				store.EXPECT().
 					DeleteUser(gomock.Any(), gomock.Eq(user.ID)).
 					Times(1).
 					Return(deleteResult, nil).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusNoContent),
 		},
@@ -254,15 +243,10 @@ func TestDeleteUserAPI(t *testing.T) {
 			requestBody:      emptyRequestBody(),
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), gomock.Eq(user.Username)).
-					Times(1).
-					Return(db.User{ID: user.ID}, nil)
-
 				store.EXPECT().
 					DeleteUser(gomock.Any(), gomock.Any()).
 					Times(0).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
 		},
@@ -273,22 +257,11 @@ func TestDeleteUserAPI(t *testing.T) {
 			requestBody:      defaultSettings.body,
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), gomock.Eq(user.Username)).
-					Times(1).
-					Return(getResult, nil)
-
 				store.EXPECT().
 					DeleteUser(gomock.Any(), gomock.Any()).
 					Times(1).
 					Return(db.DeleteUserRow{}, sql.ErrNoRows).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusForbidden),
 		},
@@ -299,22 +272,11 @@ func TestDeleteUserAPI(t *testing.T) {
 			requestBody:      defaultSettings.body,
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), gomock.Eq(user.Username)).
-					Times(1).
-					Return(getResult, nil)
-
 				store.EXPECT().
 					DeleteUser(gomock.Any(), gomock.Any()).
 					Times(1).
 					Return(db.DeleteUserRow{}, sql.ErrConnDone).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
 		},
@@ -355,17 +317,6 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:      defaultSettings.body,
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), user.Username).
-					Times(1).
-					Return(getResult, nil)
-
 				rehashParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
@@ -382,7 +333,7 @@ func TestRehashUserAPI(t *testing.T) {
 					RehashUser(gomock.Any(), EqRehashUserParams(rehashParams, user.Password, newPass)).
 					Times(1).
 					Return(rehashResult, nil).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusNoContent),
 		},
@@ -393,21 +344,10 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:      emptyRequestBody(),
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getUserResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), gomock.Eq(user.Username)).
-					Times(1).
-					Return(getUserResult, nil)
-
 				store.EXPECT().
 					RehashUser(gomock.Any(), gomock.Any()).
 					Times(0).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
 		},
@@ -418,21 +358,10 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:      defaultSettings.body.replace("old_password", util.RandomString(73)),
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getUserResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), gomock.Eq(user.Username)).
-					Times(1).
-					Return(getUserResult, nil)
-
 				store.EXPECT().
 					RehashUser(gomock.Any(), gomock.Any()).
 					Times(0).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusForbidden),
 		},
@@ -443,21 +372,10 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:      defaultSettings.body.replace("new_password", util.RandomString(73)),
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getUserResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), gomock.Eq(user.Username)).
-					Times(1).
-					Return(getUserResult, nil)
-
 				store.EXPECT().
 					RehashUser(gomock.Any(), gomock.Any()).
 					Times(0).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusForbidden),
 		},
@@ -468,17 +386,6 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:      defaultSettings.body,
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), user.Username).
-					Times(1).
-					Return(getResult, nil)
-
 				rehashParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
@@ -489,7 +396,7 @@ func TestRehashUserAPI(t *testing.T) {
 					RehashUser(gomock.Any(), EqRehashUserParams(rehashParams, user.Password, newPass)).
 					Times(1).
 					Return(db.User{}, sql.ErrNoRows).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusForbidden),
 		},
@@ -500,17 +407,6 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:      defaultSettings.body,
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
-				getResult := db.User{
-					ID:       user.ID,
-					Username: user.Username,
-					Hash:     user.Hash,
-				}
-
-				getUserCall := store.EXPECT().
-					GetUser(gomock.Any(), user.Username).
-					Times(1).
-					Return(getResult, nil)
-
 				rehashParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
@@ -521,7 +417,7 @@ func TestRehashUserAPI(t *testing.T) {
 					RehashUser(gomock.Any(), EqRehashUserParams(rehashParams, user.Password, newPass)).
 					Times(1).
 					Return(db.User{}, sql.ErrConnDone).
-					After(getUserCall)
+					After(getUserCall(store, user))
 			},
 			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
 		},
