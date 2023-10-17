@@ -83,36 +83,6 @@ func EqRehashUserParams(params db.RehashUserParams, oldPassword, newPassword str
 	}
 }
 
-type userTestCase struct {
-	name                 string
-	requestMethod        string
-	requestUrl           string
-	requestBody          requestBody
-	setupAuthHandler     setupAuthFunc
-	buildStubsHandler    buildStubsFunc
-	checkResponseHandler checkResponseFunc
-}
-
-func (tc *userTestCase) method() string {
-	return tc.requestMethod
-}
-
-func (tc *userTestCase) body() requestBody {
-	return tc.requestBody
-}
-
-func (tc *userTestCase) url() string {
-	return tc.requestUrl
-}
-
-func (tc *userTestCase) handlers() *testHandlers {
-	return &testHandlers{
-		setupAuth:     tc.setupAuthHandler,
-		buildStubs:    tc.buildStubsHandler,
-		checkResponse: tc.checkResponseHandler,
-	}
-}
-
 func TestCreateUserAPI(t *testing.T) {
 	user := util.RandomUser()
 
@@ -136,7 +106,7 @@ func TestCreateUserAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*userTestCase{
+	testCases := []*defaultTestCase{
 		{
 			name:             "OK",
 			requestMethod:    defaultSettings.methodPost,
@@ -245,7 +215,7 @@ func TestDeleteUserAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*userTestCase{
+	testCases := []*defaultTestCase{
 		{
 			name:             "OK",
 			requestMethod:    defaultSettings.methodDelete,
@@ -377,7 +347,7 @@ func TestRehashUserAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*userTestCase{
+	testCases := []*defaultTestCase{
 		{
 			name:             "OK",
 			requestMethod:    defaultSettings.methodPut,
@@ -580,7 +550,7 @@ func TestLoginUserAPI(t *testing.T) {
 		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
 	}
 
-	testCases := []*userTestCase{
+	testCases := []*defaultTestCase{
 		{
 			name:             "OK",
 			requestMethod:    defaultSettings.methodPost,

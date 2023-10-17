@@ -94,6 +94,36 @@ func requierResponseCode(code int) checkResponseFunc {
 	}
 }
 
+type defaultTestCase struct {
+	name                 string
+	requestMethod        string
+	requestUrl           string
+	requestBody          requestBody
+	setupAuthHandler     setupAuthFunc
+	buildStubsHandler    buildStubsFunc
+	checkResponseHandler checkResponseFunc
+}
+
+func (tc *defaultTestCase) method() string {
+	return tc.requestMethod
+}
+
+func (tc *defaultTestCase) body() requestBody {
+	return tc.requestBody
+}
+
+func (tc *defaultTestCase) url() string {
+	return tc.requestUrl
+}
+
+func (tc *defaultTestCase) handlers() *testHandlers {
+	return &testHandlers{
+		setupAuth:     tc.setupAuthHandler,
+		buildStubs:    tc.buildStubsHandler,
+		checkResponse: tc.checkResponseHandler,
+	}
+}
+
 type requestBody gin.H
 
 func (body requestBody) replace(key string, newValue any) requestBody {
@@ -117,4 +147,17 @@ func (body requestBody) replace(key string, newValue any) requestBody {
 
 func emptyRequestBody() requestBody {
 	return requestBody{}
+}
+
+func getUserCall(store *mockdb.MockStore, user util.FullUserInfo) *gomock.Call {
+	getUserResult := db.User{
+		ID:       user.ID,
+		Username: user.Username,
+		Hash:     user.Hash,
+	}
+
+	return store.EXPECT().
+		GetUser(gomock.Any(), gomock.Eq(user.Username)).
+		Times(1).
+		Return(getUserResult, nil)
 }
