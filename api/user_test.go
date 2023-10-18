@@ -106,14 +106,14 @@ func TestCreateUserAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				res := db.CreateUserTxResult{
 					User: db.User{
 						ID:       user.ID,
@@ -128,7 +128,7 @@ func TestCreateUserAPI(t *testing.T) {
 					Times(1).
 					Return(res, nil)
 			},
-			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				gotResult := util.Unmarshal[userResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
@@ -136,63 +136,63 @@ func TestCreateUserAPI(t *testing.T) {
 			},
 		},
 		{
-			name:             "UserAlreadyExist",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "UserAlreadyExist",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), EqCreateUserTxParams(defaultSettings.createUserTxParams, user.Password)).
 					Times(1).
 					Return(db.CreateUserTxResult{}, sql.ErrNoRows)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusForbidden),
+			checkResponse: requierResponseCode(http.StatusForbidden),
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), EqCreateUserTxParams(defaultSettings.createUserTxParams, user.Password)).
 					Times(1).
 					Return(db.CreateUserTxResult{}, sql.ErrConnDone)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 		{
-			name:             "Too long password",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body.replace("password", util.RandomString(73)),
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "Too long password",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body.replace("password", util.RandomString(73)),
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), gomock.Any()).
 					Times(0)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusForbidden),
+			checkResponse: requierResponseCode(http.StatusForbidden),
 		},
 		{
-			name:             "Invalid Request Data",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      requestBody{},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "Invalid Request Data",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   requestBody{},
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateUserTx(gomock.Any(), gomock.Any()).
 					Times(0)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
+			checkResponse: requierResponseCode(http.StatusBadRequest),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
 
@@ -215,14 +215,14 @@ func TestDeleteUserAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				deleteResult := db.DeleteUserRow{
 					ID:       user.ID,
 					Username: user.Username,
@@ -234,56 +234,56 @@ func TestDeleteUserAPI(t *testing.T) {
 					Return(deleteResult, nil).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusNoContent),
+			checkResponse: requierResponseCode(http.StatusNoContent),
 		},
 		{
-			name:             "WrongBody",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      requestBody{},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongBody",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   requestBody{},
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteUser(gomock.Any(), gomock.Any()).
 					Times(0).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
+			checkResponse: requierResponseCode(http.StatusBadRequest),
 		},
 		{
-			name:             "WrongUser",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongUser",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteUser(gomock.Any(), gomock.Any()).
 					Times(1).
 					Return(db.DeleteUserRow{}, sql.ErrNoRows).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusForbidden),
+			checkResponse: requierResponseCode(http.StatusForbidden),
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteUser(gomock.Any(), gomock.Any()).
 					Times(1).
 					Return(db.DeleteUserRow{}, sql.ErrConnDone).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
 
@@ -309,14 +309,14 @@ func TestRehashUserAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodPut,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodPut,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				rehashParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
@@ -335,57 +335,57 @@ func TestRehashUserAPI(t *testing.T) {
 					Return(rehashResult, nil).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusNoContent),
+			checkResponse: requierResponseCode(http.StatusNoContent),
 		},
 		{
-			name:             "WrongBody",
-			requestMethod:    defaultSettings.methodPut,
-			requestUrl:       defaultSettings.url,
-			requestBody:      requestBody{},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongBody",
+			requestMethod: defaultSettings.methodPut,
+			requestUrl:    defaultSettings.url,
+			requestBody:   requestBody{},
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					RehashUser(gomock.Any(), gomock.Any()).
 					Times(0).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
+			checkResponse: requierResponseCode(http.StatusBadRequest),
 		},
 		{
-			name:             "TooLongOldPassword",
-			requestMethod:    defaultSettings.methodPut,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body.replace("old_password", util.RandomString(73)),
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "TooLongOldPassword",
+			requestMethod: defaultSettings.methodPut,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body.replace("old_password", util.RandomString(73)),
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					RehashUser(gomock.Any(), gomock.Any()).
 					Times(0).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusForbidden),
+			checkResponse: requierResponseCode(http.StatusForbidden),
 		},
 		{
-			name:             "TooLongNewPassword",
-			requestMethod:    defaultSettings.methodPut,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body.replace("new_password", util.RandomString(73)),
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "TooLongNewPassword",
+			requestMethod: defaultSettings.methodPut,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body.replace("new_password", util.RandomString(73)),
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					RehashUser(gomock.Any(), gomock.Any()).
 					Times(0).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusForbidden),
+			checkResponse: requierResponseCode(http.StatusForbidden),
 		},
 		{
-			name:             "WrongUserIdOrPassword",
-			requestMethod:    defaultSettings.methodPut,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongUserIdOrPassword",
+			requestMethod: defaultSettings.methodPut,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				rehashParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
@@ -398,15 +398,15 @@ func TestRehashUserAPI(t *testing.T) {
 					Return(db.User{}, sql.ErrNoRows).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusForbidden),
+			checkResponse: requierResponseCode(http.StatusForbidden),
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodPut,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodPut,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				rehashParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
@@ -419,12 +419,12 @@ func TestRehashUserAPI(t *testing.T) {
 					Return(db.User{}, sql.ErrConnDone).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
 
@@ -446,14 +446,14 @@ func TestLoginUserAPI(t *testing.T) {
 		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.Username)).
 					Times(1).
@@ -463,7 +463,7 @@ func TestLoginUserAPI(t *testing.T) {
 						Hash:     user.Hash,
 					}, nil)
 			},
-			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				gotResult := util.Unmarshal[loginUserResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
@@ -472,53 +472,53 @@ func TestLoginUserAPI(t *testing.T) {
 			},
 		},
 		{
-			name:             "WrongBody",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      requestBody{},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongBody",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   requestBody{},
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Any()).
 					Times(0)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
+			checkResponse: requierResponseCode(http.StatusBadRequest),
 		},
 		{
-			name:             "WrongUsername",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongUsername",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.Username)).
 					Times(1).
 					Return(db.User{}, sql.ErrNoRows)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusNotFound),
+			checkResponse: requierResponseCode(http.StatusNotFound),
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.Username)).
 					Times(1).
 					Return(db.User{}, sql.ErrConnDone)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 		{
-			name:             "WrongPassword",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body.replace("password", util.RandomPassword()),
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongPassword",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body.replace("password", util.RandomPassword()),
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.Username)).
 					Times(1).
@@ -528,11 +528,11 @@ func TestLoginUserAPI(t *testing.T) {
 						Hash:     user.Hash,
 					}, nil)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusUnauthorized),
+			checkResponse: requierResponseCode(http.StatusUnauthorized),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }

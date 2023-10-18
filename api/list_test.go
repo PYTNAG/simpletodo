@@ -36,14 +36,14 @@ func TestAddListToUserAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				addListParams := db.AddListParams{
 					Author: user.ID,
 					Header: newListHeader,
@@ -55,29 +55,29 @@ func TestAddListToUserAPI(t *testing.T) {
 					Return(db.List{}, nil).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusCreated),
+			checkResponse: requierResponseCode(http.StatusCreated),
 		},
 		{
-			name:             "WrongBody",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      requestBody{},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongBody",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   requestBody{},
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					AddList(gomock.Any(), gomock.Any()).
 					Times(0).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
+			checkResponse: requierResponseCode(http.StatusBadRequest),
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				addListParams := db.AddListParams{
 					Author: user.ID,
 					Header: newListHeader,
@@ -89,12 +89,12 @@ func TestAddListToUserAPI(t *testing.T) {
 					Return(db.List{}, sql.ErrConnDone).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
 
@@ -126,21 +126,21 @@ func TestGetUserListsAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodGet,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodGet,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetLists(gomock.Any(), gomock.Eq(user.ID)).
 					Times(1).
 					Return(userLists, nil).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				lists := util.Unmarshal[getUserListsResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
@@ -154,19 +154,19 @@ func TestGetUserListsAPI(t *testing.T) {
 			},
 		},
 		{
-			name:             "NoLists",
-			requestMethod:    defaultSettings.methodGet,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "NoLists",
+			requestMethod: defaultSettings.methodGet,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetLists(gomock.Any(), gomock.Eq(user.ID)).
 					Times(1).
 					Return([]db.GetListsRow{}, sql.ErrNoRows).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				lists := util.Unmarshal[getUserListsResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
@@ -174,24 +174,24 @@ func TestGetUserListsAPI(t *testing.T) {
 			},
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodGet,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodGet,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetLists(gomock.Any(), gomock.Eq(user.ID)).
 					Times(1).
 					Return([]db.GetListsRow{}, sql.ErrConnDone).
 					After(getUserCall(store, user))
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
 
@@ -213,14 +213,14 @@ func TestDeleteUserListAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -231,15 +231,15 @@ func TestDeleteUserListAPI(t *testing.T) {
 						Return(nil),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusNoContent),
+			checkResponse: requierResponseCode(http.StatusNoContent),
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -250,11 +250,11 @@ func TestDeleteUserListAPI(t *testing.T) {
 						Return(sql.ErrConnDone),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }

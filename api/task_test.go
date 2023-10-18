@@ -47,14 +47,14 @@ func TestGetTasksAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodGet,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodGet,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -65,7 +65,7 @@ func TestGetTasksAPI(t *testing.T) {
 						Return(listTasks, nil),
 				)
 			},
-			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				tasks := util.Unmarshal[getTasksResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
@@ -79,12 +79,12 @@ func TestGetTasksAPI(t *testing.T) {
 			},
 		},
 		{
-			name:             "EmptyList",
-			requestMethod:    defaultSettings.methodGet,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "EmptyList",
+			requestMethod: defaultSettings.methodGet,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -95,7 +95,7 @@ func TestGetTasksAPI(t *testing.T) {
 						Return([]db.Task{}, sql.ErrNoRows),
 				)
 			},
-			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				tasks := util.Unmarshal[getTasksResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
@@ -103,12 +103,12 @@ func TestGetTasksAPI(t *testing.T) {
 			},
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodGet,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodGet,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -119,12 +119,12 @@ func TestGetTasksAPI(t *testing.T) {
 						Return([]db.Task{}, sql.ErrConnDone),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
 
@@ -147,7 +147,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
 			name:          "OK(Text)",
 			requestMethod: defaultSettings.methodPut,
@@ -156,8 +156,8 @@ func TestUpdateTaskAPI(t *testing.T) {
 				"type": "TEXT",
 				"text": newTaskText,
 			},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			setupAuth: defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				params := db.UpdateTaskTextParams{
 					ID:   taskId,
 					Task: newTaskText,
@@ -174,7 +174,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 						Return(nil),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusNoContent),
+			checkResponse: requierResponseCode(http.StatusNoContent),
 		},
 		{
 			name:          "InternalError(Text)",
@@ -184,8 +184,8 @@ func TestUpdateTaskAPI(t *testing.T) {
 				"type": "TEXT",
 				"text": newTaskText,
 			},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			setupAuth: defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				params := db.UpdateTaskTextParams{
 					ID:   taskId,
 					Task: newTaskText,
@@ -202,7 +202,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 						Return(sql.ErrConnDone),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 		{
 			name:          "OK(Check)",
@@ -212,8 +212,8 @@ func TestUpdateTaskAPI(t *testing.T) {
 				"type":  "CHECK",
 				"check": true,
 			},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			setupAuth: defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				params := db.UpdateCheckTaskParams{
 					ID:       taskId,
 					Complete: true,
@@ -230,7 +230,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 						Return(nil),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusNoContent),
+			checkResponse: requierResponseCode(http.StatusNoContent),
 		},
 		{
 			name:          "InternalError(Check)",
@@ -240,8 +240,8 @@ func TestUpdateTaskAPI(t *testing.T) {
 				"type":  "CHECK",
 				"check": true,
 			},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			setupAuth: defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				params := db.UpdateCheckTaskParams{
 					ID:       taskId,
 					Complete: true,
@@ -258,15 +258,15 @@ func TestUpdateTaskAPI(t *testing.T) {
 						Return(sql.ErrConnDone),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 		{
-			name:             "WrongBody",
-			requestMethod:    defaultSettings.methodPut,
-			requestUrl:       defaultSettings.url,
-			requestBody:      requestBody{},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongBody",
+			requestMethod: defaultSettings.methodPut,
+			requestUrl:    defaultSettings.url,
+			requestBody:   requestBody{},
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -277,12 +277,12 @@ func TestUpdateTaskAPI(t *testing.T) {
 						Times(0),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
+			checkResponse: requierResponseCode(http.StatusBadRequest),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
 
@@ -309,14 +309,14 @@ func TestAddTaskAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK(RootTask)",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK(RootTask)",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
 					ParentTask: sql.NullInt32{Int32: 0, Valid: false},
@@ -333,7 +333,7 @@ func TestAddTaskAPI(t *testing.T) {
 						Return(db.Task{ID: taskId}, nil),
 				)
 			},
-			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				task := util.Unmarshal[taskResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
@@ -349,8 +349,8 @@ func TestAddTaskAPI(t *testing.T) {
 				"task":        newTaskText,
 				"parent_task": taskId,
 			},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			setupAuth: defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
 					ParentTask: sql.NullInt32{Int32: taskId, Valid: true},
@@ -367,7 +367,7 @@ func TestAddTaskAPI(t *testing.T) {
 						Return(db.Task{ID: taskId}, nil),
 				)
 			},
-			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				task := util.Unmarshal[taskResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
@@ -376,12 +376,12 @@ func TestAddTaskAPI(t *testing.T) {
 			},
 		},
 		{
-			name:             "WrongBody",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      requestBody{},
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongBody",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   requestBody{},
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -391,15 +391,15 @@ func TestAddTaskAPI(t *testing.T) {
 						Times(0),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusBadRequest),
+			checkResponse: requierResponseCode(http.StatusBadRequest),
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodPost,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodPost,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
 					ParentTask: sql.NullInt32{Int32: 0, Valid: false},
@@ -416,12 +416,12 @@ func TestAddTaskAPI(t *testing.T) {
 						Return(db.Task{}, sql.ErrConnDone),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
 
@@ -444,14 +444,14 @@ func TestDeleteTaskAPI(t *testing.T) {
 		},
 	}
 
-	testCases := []*defaultTestCase{
+	testCases := []*apiTestCase{
 		{
-			name:             "OK",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "OK",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -463,15 +463,15 @@ func TestDeleteTaskAPI(t *testing.T) {
 						Return(nil),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusNoContent),
+			checkResponse: requierResponseCode(http.StatusNoContent),
 		},
 		{
-			name:             "WrongTask",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "WrongTask",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -483,15 +483,15 @@ func TestDeleteTaskAPI(t *testing.T) {
 						Return(sql.ErrNoRows),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusForbidden),
+			checkResponse: requierResponseCode(http.StatusForbidden),
 		},
 		{
-			name:             "InternalError",
-			requestMethod:    defaultSettings.methodDelete,
-			requestUrl:       defaultSettings.url,
-			requestBody:      defaultSettings.body,
-			setupAuthHandler: defaultSettings.setupAuth,
-			buildStubsHandler: func(store *mockdb.MockStore) {
+			name:          "InternalError",
+			requestMethod: defaultSettings.methodDelete,
+			requestUrl:    defaultSettings.url,
+			requestBody:   defaultSettings.body,
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
@@ -503,11 +503,11 @@ func TestDeleteTaskAPI(t *testing.T) {
 						Return(sql.ErrConnDone),
 				)
 			},
-			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, testingFunc(tc))
+		t.Run(tc.name, apiTestingFunc(tc))
 	}
 }
