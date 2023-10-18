@@ -148,7 +148,7 @@ func checkTaskParentList(store db.Store) gin.HandlerFunc {
 		}
 
 		for _, task := range tasks {
-			if task.ListID == requestedListId {
+			if task.ID == requestedTaskId {
 				ctx.Next()
 				return
 			}

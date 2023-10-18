@@ -73,7 +73,7 @@ func testingFunc(tc testCase) func(*testing.T) {
 
 		if body != nil {
 			var err error
-			data, err = json.Marshal(tc.body())
+			data, err = json.Marshal(body)
 			require.NoError(t, err)
 		}
 
@@ -145,10 +145,6 @@ func (body requestBody) replace(key string, newValue any) requestBody {
 	return newBody
 }
 
-func emptyRequestBody() requestBody {
-	return requestBody{}
-}
-
 func getUserCall(store *mockdb.MockStore, user util.FullUserInfo) *gomock.Call {
 	getUserResult := db.User{
 		ID:       user.ID,
@@ -169,5 +165,15 @@ func getListsCall(store *mockdb.MockStore, userId int32, returnedListId int32) *
 		Return(
 			[]db.GetListsRow{
 				{ID: returnedListId},
+			}, nil)
+}
+
+func getTasksCall(store *mockdb.MockStore, listId int32, returnedTaskId int32) *gomock.Call {
+	return store.EXPECT().
+		GetTasks(gomock.Any(), gomock.Eq(listId)).
+		Times(1).
+		Return(
+			[]db.Task{
+				{ID: returnedTaskId},
 			}, nil)
 }

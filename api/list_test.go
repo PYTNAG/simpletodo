@@ -61,7 +61,7 @@ func TestAddListToUserAPI(t *testing.T) {
 			name:             "WrongBody",
 			requestMethod:    defaultSettings.methodPost,
 			requestUrl:       defaultSettings.url,
-			requestBody:      emptyRequestBody(),
+			requestBody:      requestBody{},
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -101,6 +101,17 @@ func TestAddListToUserAPI(t *testing.T) {
 func TestGetUserListsAPI(t *testing.T) {
 	user := util.RandomUser()
 
+	userLists := []db.GetListsRow{
+		{
+			ID:     util.RandomID(),
+			Header: util.RandomString(8),
+		},
+		{
+			ID:     util.RandomID(),
+			Header: util.RandomString(8),
+		},
+	}
+
 	defaultSettings := struct {
 		methodGet string
 		url       string
@@ -109,7 +120,7 @@ func TestGetUserListsAPI(t *testing.T) {
 	}{
 		methodGet: http.MethodGet,
 		url:       fmt.Sprintf("/users/%d/lists", user.ID),
-		body:      emptyRequestBody(),
+		body:      requestBody{},
 		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
 			addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
 		},
@@ -126,7 +137,33 @@ func TestGetUserListsAPI(t *testing.T) {
 				store.EXPECT().
 					GetLists(gomock.Any(), gomock.Eq(user.ID)).
 					Times(1).
-					Return([]db.GetListsRow{}, nil).
+					Return(userLists, nil).
+					After(getUserCall(store, user))
+			},
+			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				lists := util.Unmarshal[getUserListsResponse](t, recorder.Body)
+
+				require.Equal(t, http.StatusOK, recorder.Code)
+
+				require.NotEmpty(t, lists.Lists)
+				require.Len(t, lists.Lists, len(userLists))
+
+				for _, list := range lists.Lists {
+					require.Contains(t, userLists, list)
+				}
+			},
+		},
+		{
+			name:             "NoLists",
+			requestMethod:    defaultSettings.methodGet,
+			requestUrl:       defaultSettings.url,
+			requestBody:      defaultSettings.body,
+			setupAuthHandler: defaultSettings.setupAuth,
+			buildStubsHandler: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetLists(gomock.Any(), gomock.Eq(user.ID)).
+					Times(1).
+					Return([]db.GetListsRow{}, sql.ErrNoRows).
 					After(getUserCall(store, user))
 			},
 			checkResponseHandler: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -170,7 +207,7 @@ func TestDeleteUserListAPI(t *testing.T) {
 	}{
 		methodDelete: http.MethodDelete,
 		url:          fmt.Sprintf("/users/%d/lists/%d", user.ID, listId),
-		body:         emptyRequestBody(),
+		body:         requestBody{},
 		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
 			addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
 		},

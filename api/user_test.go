@@ -180,7 +180,7 @@ func TestCreateUserAPI(t *testing.T) {
 			name:             "Invalid Request Data",
 			requestMethod:    defaultSettings.methodPost,
 			requestUrl:       defaultSettings.url,
-			requestBody:      emptyRequestBody(),
+			requestBody:      requestBody{},
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -240,7 +240,7 @@ func TestDeleteUserAPI(t *testing.T) {
 			name:             "WrongBody",
 			requestMethod:    defaultSettings.methodDelete,
 			requestUrl:       defaultSettings.url,
-			requestBody:      emptyRequestBody(),
+			requestBody:      requestBody{},
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -341,7 +341,7 @@ func TestRehashUserAPI(t *testing.T) {
 			name:             "WrongBody",
 			requestMethod:    defaultSettings.methodPut,
 			requestUrl:       defaultSettings.url,
-			requestBody:      emptyRequestBody(),
+			requestBody:      requestBody{},
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -475,7 +475,7 @@ func TestLoginUserAPI(t *testing.T) {
 			name:             "WrongBody",
 			requestMethod:    defaultSettings.methodPost,
 			requestUrl:       defaultSettings.url,
-			requestBody:      emptyRequestBody(),
+			requestBody:      requestBody{},
 			setupAuthHandler: defaultSettings.setupAuth,
 			buildStubsHandler: func(store *mockdb.MockStore) {
 				store.EXPECT().
