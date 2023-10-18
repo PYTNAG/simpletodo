@@ -424,3 +424,90 @@ func TestAddTaskAPI(t *testing.T) {
 		t.Run(tc.name, testingFunc(tc))
 	}
 }
+
+func TestDeleteTaskAPI(t *testing.T) {
+	user := util.RandomUser()
+	listId := util.RandomID()
+	taskId := util.RandomID()
+
+	defaultSettings := struct {
+		methodDelete string
+		url          string
+		body         requestBody
+		setupAuth    setupAuthFunc
+	}{
+		methodDelete: http.MethodDelete,
+		url:          fmt.Sprintf("/users/%d/lists/%d/tasks/%d", user.ID, listId, taskId),
+		body:         requestBody{},
+		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
+			addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
+		},
+	}
+
+	testCases := []*defaultTestCase{
+		{
+			name:             "OK",
+			requestMethod:    defaultSettings.methodDelete,
+			requestUrl:       defaultSettings.url,
+			requestBody:      defaultSettings.body,
+			setupAuthHandler: defaultSettings.setupAuth,
+			buildStubsHandler: func(store *mockdb.MockStore) {
+				gomock.InOrder(
+					getUserCall(store, user),
+					getListsCall(store, user.ID, listId),
+					getTasksCall(store, listId, taskId),
+
+					store.EXPECT().
+						DeleteTask(gomock.Any(), gomock.Eq(taskId)).
+						Times(1).
+						Return(nil),
+				)
+			},
+			checkResponseHandler: requierResponseCode(http.StatusNoContent),
+		},
+		{
+			name:             "WrongTask",
+			requestMethod:    defaultSettings.methodDelete,
+			requestUrl:       defaultSettings.url,
+			requestBody:      defaultSettings.body,
+			setupAuthHandler: defaultSettings.setupAuth,
+			buildStubsHandler: func(store *mockdb.MockStore) {
+				gomock.InOrder(
+					getUserCall(store, user),
+					getListsCall(store, user.ID, listId),
+					getTasksCall(store, listId, taskId),
+
+					store.EXPECT().
+						DeleteTask(gomock.Any(), gomock.Eq(taskId)).
+						Times(1).
+						Return(sql.ErrNoRows),
+				)
+			},
+			checkResponseHandler: requierResponseCode(http.StatusForbidden),
+		},
+		{
+			name:             "InternalError",
+			requestMethod:    defaultSettings.methodDelete,
+			requestUrl:       defaultSettings.url,
+			requestBody:      defaultSettings.body,
+			setupAuthHandler: defaultSettings.setupAuth,
+			buildStubsHandler: func(store *mockdb.MockStore) {
+				gomock.InOrder(
+					getUserCall(store, user),
+					getListsCall(store, user.ID, listId),
+					getTasksCall(store, listId, taskId),
+
+					store.EXPECT().
+						DeleteTask(gomock.Any(), gomock.Eq(taskId)).
+						Times(1).
+						Return(sql.ErrConnDone),
+				)
+			},
+			checkResponseHandler: requierResponseCode(http.StatusInternalServerError),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, testingFunc(tc))
+	}
+}
