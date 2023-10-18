@@ -3,10 +3,11 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
+	mockdb "github.com/PYTNAG/simpletodo/db/mock"
+	db "github.com/PYTNAG/simpletodo/db/sqlc"
 	"github.com/PYTNAG/simpletodo/token"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
@@ -28,78 +29,140 @@ func addAuthorization(
 }
 
 func TestAuthMiddleware(t *testing.T) {
-	testCases := []struct {
-		name          string
-		setupAuth     func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker)
-		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
+	defaultSettings := struct {
+		method        string
+		url           string
+		buildStubs    buildStubsFunc
+		getMiddleware getMiddlewareFunc
 	}{
+		method:     http.MethodGet,
+		url:        "/auth",
+		buildStubs: func(store *mockdb.MockStore) {},
+		getMiddleware: func(server *Server, store db.Store) gin.HandlerFunc {
+			return authMiddleware(*server.pasetoMaker)
+		},
+	}
+
+	testCases := []*middlewareTestCase{
 		{
-			name: "OK",
+			name:        "OK",
+			requestPath: defaultSettings.url,
+			requestUrl:  defaultSettings.url,
 			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
 				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, "user", time.Minute)
 			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, recorder.Code)
-			},
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusOK),
+			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
-			name:      "NoAuthorization",
-			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, recorder.Code)
-			},
+			name:          "NoAuthorization",
+			requestPath:   defaultSettings.url,
+			requestUrl:    defaultSettings.url,
+			setupAuth:     func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
-			name: "InvalidAuthorizationFormat",
+			name:        "InvalidAuthorizationFormat",
+			requestPath: defaultSettings.url,
+			requestUrl:  defaultSettings.url,
 			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
 				addAuthorization(t, request, pasetoMaker, "", "user", time.Minute)
 			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, recorder.Code)
-			},
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
-			name: "UnsupportedAuthorizationType",
+			name:        "UnsupportedAuthorizationType",
+			requestPath: defaultSettings.url,
+			requestUrl:  defaultSettings.url,
 			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
 				addAuthorization(t, request, pasetoMaker, "unsupported", "user", time.Minute)
 			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, recorder.Code)
-			},
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
-			name: "ExpiredToken",
+			name:        "ExpiredToken",
+			requestPath: defaultSettings.url,
+			requestUrl:  defaultSettings.url,
 			setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
 				addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, "user", -time.Minute)
 			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusUnauthorized, recorder.Code)
-			},
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			getMiddleware: defaultSettings.getMiddleware,
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			server := newTestServer(t, nil)
+		t.Run(tc.name, testingMiddlewareFunc(tc))
+	}
+}
 
-			authPath := "/auth"
-			server.router.GET(
-				authPath,
-				authMiddleware(*server.pasetoMaker),
-				func(ctx *gin.Context) {
-					ctx.JSON(http.StatusOK, gin.H{})
-				},
-			)
+func TestIdRequestMiddleware(t *testing.T) {
+	idKey := "id"
 
-			recorder := httptest.NewRecorder()
-			request, err := http.NewRequest(http.MethodGet, authPath, nil)
-			require.NoError(t, err)
+	defaultSettings := struct {
+		method        string
+		path          string
+		buildStubs    buildStubsFunc
+		setupAuth     setupAuthFunc
+		getMiddleware getMiddlewareFunc
+	}{
+		method:     http.MethodGet,
+		path:       fmt.Sprintf("/:%s", idKey),
+		buildStubs: func(store *mockdb.MockStore) {},
+		setupAuth:  func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
+		getMiddleware: func(server *Server, store db.Store) gin.HandlerFunc {
+			return idRequestMiddleware(idKey)
+		},
+	}
 
-			tc.setupAuth(t, request, server.pasetoMaker)
+	testCases := []*middlewareTestCase{
+		{
+			name:          "OK",
+			requestPath:   defaultSettings.path,
+			requestUrl:    fmt.Sprintf("/%d", 1),
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusOK),
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:          "NaN",
+			requestPath:   defaultSettings.path,
+			requestUrl:    fmt.Sprintf("/%s", "nan"),
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusBadRequest),
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:          "OutOfRange",
+			requestPath:   defaultSettings.path,
+			requestUrl:    fmt.Sprintf("/%d", int64(^uint32(0)>>1)+1), // maximum int32 + 1
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusBadRequest),
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:          "Non-Positive",
+			requestPath:   defaultSettings.path,
+			requestUrl:    fmt.Sprintf("/%d", 0),
+			setupAuth:     defaultSettings.setupAuth,
+			buildStubs:    defaultSettings.buildStubs,
+			checkResponse: requierResponseCode(http.StatusBadRequest),
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+	}
 
-			server.router.ServeHTTP(recorder, request)
-
-			tc.checkResponse(t, recorder)
-		})
+	for _, tc := range testCases {
+		t.Run(tc.name, testingMiddlewareFunc(tc))
 	}
 }
