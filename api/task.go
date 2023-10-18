@@ -9,22 +9,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type getTasksResponse struct {
+	Tasks []db.Task `json:"tasks"`
+}
+
 func (s *Server) getTasks(ctx *gin.Context) {
-	userId := ctx.MustGet(userIdKey).(int32)
 	listId := ctx.MustGet(listIdKey).(int32)
 
 	tasks, err := s.store.GetTasks(ctx, listId)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, fmt.Sprintf("User %d doesn't have any tasks in list %d", userId, listId)))
-			return
-		}
-
+	if err != nil && err != sql.ErrNoRows {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}
 
-	ctx.JSON(http.StatusOK, tasks)
+	ctx.JSON(http.StatusOK, getTasksResponse{Tasks: tasks})
 }
 
 type updateTaskData struct {

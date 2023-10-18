@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"net/http"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
@@ -38,7 +39,7 @@ type getUserListsResponse struct {
 
 func (s *Server) getUserLists(ctx *gin.Context) {
 	lists, err := s.store.GetLists(ctx, ctx.MustGet(userIdKey).(int32))
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}
