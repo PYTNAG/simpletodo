@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"testing"
@@ -9,8 +10,10 @@ import (
 	mockdb "github.com/PYTNAG/simpletodo/db/mock"
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
 	"github.com/PYTNAG/simpletodo/token"
+	"github.com/PYTNAG/simpletodo/util"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func addAuthorization(
@@ -33,11 +36,13 @@ func TestAuthMiddleware(t *testing.T) {
 		method        string
 		url           string
 		buildStubs    buildStubsFunc
+		setupContext  gin.HandlerFunc
 		getMiddleware getMiddlewareFunc
 	}{
-		method:     http.MethodGet,
-		url:        "/auth",
-		buildStubs: func(store *mockdb.MockStore) {},
+		method:       http.MethodGet,
+		url:          "/auth",
+		buildStubs:   func(store *mockdb.MockStore) {},
+		setupContext: func(ctx *gin.Context) { ctx.Next() },
 		getMiddleware: func(server *Server, store db.Store) gin.HandlerFunc {
 			return authMiddleware(*server.pasetoMaker)
 		},
@@ -53,6 +58,7 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusOK),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
@@ -62,6 +68,7 @@ func TestAuthMiddleware(t *testing.T) {
 			setupAuth:     func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
@@ -73,6 +80,7 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
@@ -84,6 +92,7 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
@@ -95,6 +104,7 @@ func TestAuthMiddleware(t *testing.T) {
 			},
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 	}
@@ -112,12 +122,14 @@ func TestIdRequestMiddleware(t *testing.T) {
 		path          string
 		buildStubs    buildStubsFunc
 		setupAuth     setupAuthFunc
+		setupContext  gin.HandlerFunc
 		getMiddleware getMiddlewareFunc
 	}{
-		method:     http.MethodGet,
-		path:       fmt.Sprintf("/:%s", idKey),
-		buildStubs: func(store *mockdb.MockStore) {},
-		setupAuth:  func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
+		method:       http.MethodGet,
+		path:         fmt.Sprintf("/:%s", idKey),
+		buildStubs:   func(store *mockdb.MockStore) {},
+		setupAuth:    func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
+		setupContext: func(ctx *gin.Context) { ctx.Next() },
 		getMiddleware: func(server *Server, store db.Store) gin.HandlerFunc {
 			return idRequestMiddleware(idKey)
 		},
@@ -131,6 +143,7 @@ func TestIdRequestMiddleware(t *testing.T) {
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusOK),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
@@ -140,6 +153,7 @@ func TestIdRequestMiddleware(t *testing.T) {
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusBadRequest),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
@@ -149,6 +163,7 @@ func TestIdRequestMiddleware(t *testing.T) {
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusBadRequest),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 		{
@@ -158,6 +173,101 @@ func TestIdRequestMiddleware(t *testing.T) {
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs:    defaultSettings.buildStubs,
 			checkResponse: requierResponseCode(http.StatusBadRequest),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, testingMiddlewareFunc(tc))
+	}
+}
+
+func TestCompareRequestedIdMiddleware(t *testing.T) {
+	user := util.RandomUser()
+
+	defaultSettings := struct {
+		method        string
+		path          string
+		setupAuth     setupAuthFunc
+		setupContext  gin.HandlerFunc
+		getMiddleware getMiddlewareFunc
+	}{
+		method:    http.MethodGet,
+		path:      fmt.Sprintf("/:%s", userIdKey),
+		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
+		setupContext: func(ctx *gin.Context) {
+			token, _ := token.NewPayload(user.Username, time.Minute)
+
+			ctx.Set(authorizationPayloadKey, token)
+			ctx.Set(userIdKey, user.ID)
+
+			ctx.Next()
+		},
+		getMiddleware: func(server *Server, store db.Store) gin.HandlerFunc {
+			return compareRequestedIdMiddleware(store)
+		},
+	}
+
+	testCases := []*middlewareTestCase{
+		{
+			name:        "OK",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/%d", user.ID),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetUser(gomock.Any(), gomock.Eq(user.Username)).
+					Times(1).
+					Return(db.User{ID: user.ID}, nil)
+			},
+			checkResponse: requierResponseCode(http.StatusOK),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "AuthorizedUserDoesNotExist",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/%d", user.ID),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetUser(gomock.Any(), gomock.Eq(user.Username)).
+					Times(1).
+					Return(db.User{}, sql.ErrNoRows)
+			},
+			checkResponse: requierResponseCode(http.StatusForbidden),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "InternalError",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/%d", user.ID),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetUser(gomock.Any(), gomock.Eq(user.Username)).
+					Times(1).
+					Return(db.User{}, sql.ErrConnDone)
+			},
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "AccessError",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/%d", user.ID),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetUser(gomock.Any(), gomock.Eq(user.Username)).
+					Times(1).
+					Return(db.User{ID: util.RandomID()}, nil)
+			},
+			checkResponse: requierResponseCode(http.StatusUnauthorized),
+			setupContext:  defaultSettings.setupContext,
 			getMiddleware: defaultSettings.getMiddleware,
 		},
 	}
