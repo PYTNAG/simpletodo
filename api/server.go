@@ -54,7 +54,7 @@ func (server *Server) setupRouter() {
 	listRequestRoutes.Use(checkListAuthorMiddleware(server.store))
 
 	taskRequestRoutes := server.getNewIdRequestGroup(listRequestRoutes, "/tasks/:%s", taskIdKey)
-	taskRequestRoutes.Use(checkTaskParentList(server.store))
+	taskRequestRoutes.Use(checkTaskParentListMiddleware(server.store))
 
 	// user
 	router.POST("/users", server.createUser)

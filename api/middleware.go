@@ -129,7 +129,7 @@ func checkListAuthorMiddleware(store db.Store) gin.HandlerFunc {
 	}
 }
 
-func checkTaskParentList(store db.Store) gin.HandlerFunc {
+func checkTaskParentListMiddleware(store db.Store) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		requestedUserId := ctx.MustGet(userIdKey).(int32)
 		requestedListId := ctx.MustGet(listIdKey).(int32)

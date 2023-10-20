@@ -276,3 +276,206 @@ func TestCompareRequestedIdMiddleware(t *testing.T) {
 		t.Run(tc.name, testingMiddlewareFunc(tc))
 	}
 }
+
+func TestCheckListAuthorMiddleware(t *testing.T) {
+	user := util.RandomUser()
+	listId := util.RandomID()
+
+	defaultSettings := struct {
+		method        string
+		path          string
+		setupAuth     setupAuthFunc
+		setupContext  gin.HandlerFunc
+		getMiddleware getMiddlewareFunc
+	}{
+		method:    http.MethodGet,
+		path:      fmt.Sprintf("/:%s/:%s", userIdKey, listIdKey),
+		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
+		setupContext: func(ctx *gin.Context) {
+			ctx.Set(userIdKey, user.ID)
+			ctx.Set(listIdKey, listId)
+
+			ctx.Next()
+		},
+		getMiddleware: func(server *Server, store db.Store) gin.HandlerFunc {
+			return checkListAuthorMiddleware(store)
+		},
+	}
+
+	testCases := []*middlewareTestCase{
+		{
+			name:        "OK",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/:%d/:%d", user.ID, listId),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetLists(gomock.Any(), gomock.Eq(user.ID)).
+					Times(1).
+					Return([]db.GetListsRow{
+						{ID: listId},
+						{ID: util.RandomID()},
+						{ID: util.RandomID()},
+					}, nil)
+			},
+			checkResponse: requierResponseCode(http.StatusOK),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "UserDoesNotHaveLists",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/:%d/:%d", user.ID, listId),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetLists(gomock.Any(), gomock.Eq(user.ID)).
+					Times(1).
+					Return([]db.GetListsRow{}, sql.ErrNoRows)
+			},
+			checkResponse: requierResponseCode(http.StatusForbidden),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "InternalError",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/:%d/:%d", user.ID, listId),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetLists(gomock.Any(), gomock.Eq(user.ID)).
+					Times(1).
+					Return([]db.GetListsRow{}, sql.ErrConnDone)
+			},
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "ListDoesNotExist",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/:%d/:%d", user.ID, listId),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+
+				store.EXPECT().
+					GetLists(gomock.Any(), gomock.Eq(user.ID)).
+					Times(1).
+					Return([]db.GetListsRow{
+						{ID: util.RandomID()},
+						{ID: util.RandomID()},
+					}, nil)
+			},
+			checkResponse: requierResponseCode(http.StatusBadRequest),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, testingMiddlewareFunc(tc))
+	}
+}
+
+func TestCheckTaskParentListMiddleware(t *testing.T) {
+	user := util.RandomUser()
+	listId := util.RandomID()
+	taskId := util.RandomID()
+
+	defaultSettings := struct {
+		method        string
+		path          string
+		setupAuth     setupAuthFunc
+		setupContext  gin.HandlerFunc
+		getMiddleware getMiddlewareFunc
+	}{
+		method:    http.MethodGet,
+		path:      fmt.Sprintf("/:%s/:%s/:%s", userIdKey, listIdKey, taskIdKey),
+		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {},
+		setupContext: func(ctx *gin.Context) {
+			ctx.Set(userIdKey, user.ID)
+			ctx.Set(listIdKey, listId)
+			ctx.Set(taskIdKey, taskId)
+
+			ctx.Next()
+		},
+		getMiddleware: func(server *Server, store db.Store) gin.HandlerFunc {
+			return checkTaskParentListMiddleware(store)
+		},
+	}
+
+	testCases := []*middlewareTestCase{
+		{
+			name:        "OK",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/:%d/:%d/:%d", user.ID, listId, taskId),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTasks(gomock.Any(), gomock.Eq(listId)).
+					Times(1).
+					Return([]db.Task{
+						{ID: taskId},
+						{ID: util.RandomID()},
+						{ID: util.RandomID()},
+					}, nil)
+			},
+			checkResponse: requierResponseCode(http.StatusOK),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "EmptyList",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/:%d/:%d/:%d", user.ID, listId, taskId),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTasks(gomock.Any(), gomock.Eq(listId)).
+					Times(1).
+					Return([]db.Task{}, sql.ErrNoRows)
+			},
+			checkResponse: requierResponseCode(http.StatusForbidden),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "InternalError",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/:%d/:%d/:%d", user.ID, listId, taskId),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTasks(gomock.Any(), gomock.Eq(listId)).
+					Times(1).
+					Return([]db.Task{}, sql.ErrConnDone)
+			},
+			checkResponse: requierResponseCode(http.StatusInternalServerError),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+		{
+			name:        "TaskDoesNotExist",
+			requestPath: defaultSettings.path,
+			requestUrl:  fmt.Sprintf("/:%d/:%d/:%d", user.ID, listId, taskId),
+			setupAuth:   defaultSettings.setupAuth,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetTasks(gomock.Any(), gomock.Eq(listId)).
+					Times(1).
+					Return([]db.Task{
+						{ID: util.RandomID()},
+						{ID: util.RandomID()},
+					}, nil)
+			},
+			checkResponse: requierResponseCode(http.StatusBadRequest),
+			setupContext:  defaultSettings.setupContext,
+			getMiddleware: defaultSettings.getMiddleware,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, testingMiddlewareFunc(tc))
+	}
+}
