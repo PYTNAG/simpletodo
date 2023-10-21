@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=mysecret
+      - POSTGRES_DB=simple_todo
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_SOURCE=postgresql://root:mysecret@postgres:5432/simple_todo?sslmode=disable
+      - GIN_MODE=release
+    depends_on:
+      - postgres
+    entrypoint: [ "/app/wait-for.sh", "postgres:5432", "--", "/app/start.sh" ]
+    command: [ "/app/main" ]

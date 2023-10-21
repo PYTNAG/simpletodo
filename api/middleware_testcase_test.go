@@ -18,6 +18,7 @@ type middlewareTestCase struct {
 	setupAuth     setupAuthFunc
 	buildStubs    buildStubsFunc
 	checkResponse checkResponseFunc
+	setupContext  gin.HandlerFunc
 	getMiddleware getMiddlewareFunc
 }
 
@@ -35,6 +36,7 @@ func testingMiddlewareFunc(tc *middlewareTestCase) func(*testing.T) {
 
 		server.router.GET(
 			tc.requestPath,
+			tc.setupContext,
 			tc.getMiddleware(server, store),
 			func(ctx *gin.Context) {
 				ctx.JSON(http.StatusOK, gin.H{})

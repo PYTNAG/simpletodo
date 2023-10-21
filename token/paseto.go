@@ -1,6 +1,7 @@
 package token
 
 import (
+	"encoding/hex"
 	"time"
 
 	"aidanwoods.dev/go-paseto"
@@ -23,7 +24,7 @@ func NewPasetoMaker(symmetricKey string) (*PasetoMaker, error) {
 		maker.symmetricKey = paseto.NewV4SymmetricKey()
 	} else {
 		var err error
-		maker.symmetricKey, err = paseto.V4SymmetricKeyFromHex(symmetricKey)
+		maker.symmetricKey, err = paseto.V4SymmetricKeyFromHex(hex.EncodeToString([]byte(symmetricKey)))
 		if err != nil {
 			return nil, err
 		}
