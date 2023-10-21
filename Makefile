@@ -1,5 +1,5 @@
 postgres:
-	docker run --name todo_db -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=mysecret -d postgres:15.3
+	docker run --name todo_db --network todo-network -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=mysecret -d postgres:15.3
 
 start:
 	docker start todo_db
