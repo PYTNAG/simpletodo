@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
@@ -27,7 +26,7 @@ type Server struct {
 // NewServer creates a new HTTP server and setup routing
 func NewServer(config util.Config, store db.Store) (*Server, error) {
 	// go-paseto decodes key using hex.DecodeString inside
-	pasetoMaker, err := token.NewPasetoMaker(hex.EncodeToString([]byte(config.TokenSymmetricKey)))
+	pasetoMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("Cannot create token maker: %w", err)
 	}
