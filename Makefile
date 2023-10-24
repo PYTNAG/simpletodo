@@ -19,8 +19,8 @@ migrateup:
 migratedown:
 	migrate -path db/migration -database "postgresql://root:mysecret@localhost:5432/simple_todo?sslmode=disable" -verbose down
 
-docker_sqlc:
-	docker run --rm -v .:/src -w /src kjconroy/sqlc generate
+sqlc:
+	sqlc generate
 
 test:
 	go test -v -cover ./...
