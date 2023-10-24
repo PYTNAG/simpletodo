@@ -11,7 +11,8 @@ import (
 )
 
 type userResponse struct {
-	ID int32 `json:"user_id"`
+	AccessToken string `json:"access_token"`
+	ID          int32  `json:"user_id"`
 }
 
 type createUserData struct {
@@ -32,7 +33,7 @@ func (s *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	result, err := s.store.CreateUserTx(
+	createUserResult, err := s.store.CreateUserTx(
 		ctx,
 		db.CreateUserTxParams{
 			Username: data.Username,
@@ -49,8 +50,18 @@ func (s *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}
+	accesToken, err := s.pasetoMaker.CreateToken(createUserResult.User.Username, s.config.AccessTokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
+		return
+	}
 
-	ctx.JSON(http.StatusCreated, userResponse{ID: result.User.ID})
+	response := userResponse{
+		AccessToken: accesToken,
+		ID:          createUserResult.User.ID,
+	}
+
+	ctx.JSON(http.StatusCreated, response)
 }
 
 type deleteUserData struct {
@@ -131,11 +142,6 @@ type loginUserData struct {
 	Password string `json:"password" binding:"required"`
 }
 
-type loginUserResponse struct {
-	AccessToken string `json:"access_token"`
-	ID          int32  `json:"user_id"`
-}
-
 func (server *Server) loginUser(ctx *gin.Context) {
 	var data loginUserData
 	if err := ctx.ShouldBindJSON(&data); err != nil {
@@ -166,7 +172,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	response := loginUserResponse{
+	response := userResponse{
 		AccessToken: accesToken,
 		ID:          user.ID,
 	}

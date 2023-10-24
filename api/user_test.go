@@ -464,7 +464,7 @@ func TestLoginUserAPI(t *testing.T) {
 					}, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				gotResult := util.Unmarshal[loginUserResponse](t, recorder.Body)
+				gotResult := util.Unmarshal[userResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
 				require.Equal(t, gotResult.ID, user.ID)
