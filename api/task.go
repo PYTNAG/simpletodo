@@ -29,8 +29,8 @@ func (s *Server) getTasks(ctx *gin.Context) {
 
 type updateTaskData struct {
 	Type  string `json:"type" binding:"required,oneof=CHECK TEXT"`
-	Text  string `json:"text" binding:"required_without=Check"`
-	Check bool   `json:"check" binding:"required_without=Text,boolean"`
+	Text  string `json:"text" binding:"required_if=Type TEXT"`
+	Check bool   `json:"check" binding:"boolean,required_if=Type CHECK"`
 }
 
 func (s *Server) updateTask(ctx *gin.Context) {
