@@ -74,6 +74,9 @@ func (server *Server) setupRouter() {
 	taskRequestRoutes.PUT("", server.updateTask)
 	taskRequestRoutes.DELETE("", server.deleteTask)
 
+	// tokens
+	router.POST("/tokens/refresh_access", server.refreshAccessToken)
+
 	server.router = router
 }
 

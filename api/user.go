@@ -4,16 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"time"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
 	"github.com/PYTNAG/simpletodo/util"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
-
-type userResponse struct {
-	AccessToken string `json:"access_token"`
-	ID          int32  `json:"user_id"`
-}
 
 type createUserData struct {
 	Username string `json:"username" binding:"required"`
@@ -50,18 +47,8 @@ func (s *Server) createUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}
-	accesToken, err := s.pasetoMaker.CreateToken(createUserResult.User.Username, s.config.AccessTokenDuration)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
-		return
-	}
 
-	response := userResponse{
-		AccessToken: accesToken,
-		ID:          createUserResult.User.ID,
-	}
-
-	ctx.JSON(http.StatusCreated, response)
+	ctx.JSON(http.StatusCreated, gin.H{"user_id": createUserResult.User.ID})
 }
 
 type deleteUserData struct {
@@ -137,19 +124,28 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
+type loginUserResponse struct {
+	SessionsID            uuid.UUID `json:"session_id"`
+	AccessToken           string    `json:"access_token"`
+	AccessTokenExpiresAt  time.Time `json:"access_token_expires_at"`
+	RefreshToken          string    `json:"refresh_token"`
+	RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
+	ID                    int32     `json:"user_id"`
+}
+
 type loginUserData struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-func (server *Server) loginUser(ctx *gin.Context) {
+func (s *Server) loginUser(ctx *gin.Context) {
 	var data loginUserData
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
 		return
 	}
 
-	user, err := server.store.GetUser(ctx, data.Username)
+	user, err := s.store.GetUser(ctx, data.Username)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorResponse(err, fmt.Sprintf("There is no user with username %s", data.Username)))
@@ -166,15 +162,39 @@ func (server *Server) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	accesToken, err := server.pasetoMaker.CreateToken(user.Username, server.config.AccessTokenDuration)
+	accesToken, accessPayload, err := s.pasetoMaker.CreateToken(user.Username, s.config.AccessTokenDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
 		return
 	}
 
-	response := userResponse{
-		AccessToken: accesToken,
-		ID:          user.ID,
+	refreshToken, refreshPayload, err := s.pasetoMaker.CreateToken(user.Username, s.config.RefreshTokenDuration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
+	}
+
+	params := db.CreateSessionParams{
+		ID:           refreshPayload.ID,
+		Username:     user.Username,
+		RefreshToken: refreshToken,
+		UserAgent:    ctx.Request.UserAgent(),
+		ClientIp:     ctx.ClientIP(),
+		IsBlocked:    false,
+		ExpiresAt:    refreshPayload.ExpiredAt,
+	}
+
+	session, err := s.store.CreateSession(ctx, params)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
+	}
+
+	response := loginUserResponse{
+		SessionsID:            session.ID,
+		AccessToken:           accesToken,
+		AccessTokenExpiresAt:  accessPayload.ExpiredAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshPayload.ExpiredAt,
+		ID:                    user.ID,
 	}
 
 	ctx.JSON(http.StatusOK, response)

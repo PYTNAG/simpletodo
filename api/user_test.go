@@ -13,6 +13,7 @@ import (
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
 	"github.com/PYTNAG/simpletodo/token"
 	"github.com/PYTNAG/simpletodo/util"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -129,10 +130,13 @@ func TestCreateUserAPI(t *testing.T) {
 					Return(res, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				gotResult := util.Unmarshal[userResponse](t, recorder.Body)
+				type userId struct {
+					UserID int32 `json:"user_id"`
+				}
+				gotResult := util.Unmarshal[userId](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
-				require.Greater(t, gotResult.ID, int32(0))
+				require.Greater(t, gotResult.UserID, int32(0))
 			},
 		},
 		{
@@ -430,6 +434,9 @@ func TestRehashUserAPI(t *testing.T) {
 
 func TestLoginUserAPI(t *testing.T) {
 	user := util.RandomUser()
+	session := db.Session{
+		ID: uuid.New(),
+	}
 
 	defaultSettings := struct {
 		methodPost string
@@ -455,6 +462,11 @@ func TestLoginUserAPI(t *testing.T) {
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
+					CreateSession(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(session, nil)
+
+				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.Username)).
 					Times(1).
 					Return(db.User{
@@ -464,7 +476,7 @@ func TestLoginUserAPI(t *testing.T) {
 					}, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				gotResult := util.Unmarshal[userResponse](t, recorder.Body)
+				gotResult := util.Unmarshal[loginUserResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
 				require.Equal(t, gotResult.ID, user.ID)
