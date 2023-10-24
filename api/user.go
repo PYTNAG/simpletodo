@@ -51,19 +51,8 @@ func (s *Server) createUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"user_id": createUserResult.User.ID})
 }
 
-type deleteUserData struct {
-	Password string `json:"password" binding:"required,printascii,min=8"`
-}
-
 func (s *Server) deleteUser(ctx *gin.Context) {
 	userId := ctx.MustGet(userIdKey).(int32)
-
-	var data deleteUserData
-
-	if err := ctx.ShouldBindJSON(&data); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err, ""))
-		return
-	}
 
 	if _, err := s.store.DeleteUser(ctx, userId); err != nil {
 		if err == sql.ErrNoRows {
