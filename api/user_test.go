@@ -211,9 +211,7 @@ func TestDeleteUserAPI(t *testing.T) {
 	}{
 		methodDelete: http.MethodDelete,
 		url:          fmt.Sprintf("/users/%d", user.ID),
-		body: requestBody{
-			"password": user.Password,
-		},
+		body:         requestBody{},
 		setupAuth: func(t *testing.T, request *http.Request, pasetoMaker *token.PasetoMaker) {
 			addAuthorization(t, request, pasetoMaker, authorizationTypeBearer, user.Username, time.Minute)
 		},
@@ -239,20 +237,6 @@ func TestDeleteUserAPI(t *testing.T) {
 					After(getUserCall(store, user))
 			},
 			checkResponse: requierResponseCode(http.StatusNoContent),
-		},
-		{
-			name:          "WrongBody",
-			requestMethod: defaultSettings.methodDelete,
-			requestUrl:    defaultSettings.url,
-			requestBody:   requestBody{},
-			setupAuth:     defaultSettings.setupAuth,
-			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().
-					DeleteUser(gomock.Any(), gomock.Any()).
-					Times(0).
-					After(getUserCall(store, user))
-			},
-			checkResponse: requierResponseCode(http.StatusBadRequest),
 		},
 		{
 			name:          "WrongUser",

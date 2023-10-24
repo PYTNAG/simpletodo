@@ -320,7 +320,7 @@ func TestAddTaskAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
-					ParentTask: dbtypes.NullInt32{Int32: 0, Valid: false},
+					ParentTask: dbtypes.NewNullInt32(0, false),
 					Task:       newTaskText,
 				}
 
@@ -354,7 +354,7 @@ func TestAddTaskAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
-					ParentTask: dbtypes.NullInt32{Int32: taskId, Valid: true},
+					ParentTask: dbtypes.NewNullInt32(taskId, true),
 					Task:       newTaskText,
 				}
 
@@ -403,7 +403,7 @@ func TestAddTaskAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
-					ParentTask: dbtypes.NullInt32{Int32: 0, Valid: false},
+					ParentTask: dbtypes.NewNullInt32(0, false),
 					Task:       newTaskText,
 				}
 

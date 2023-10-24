@@ -87,7 +87,7 @@ func (s *Server) addTask(ctx *gin.Context) {
 
 	arg := db.AddTaskParams{
 		ListID:     list_id,
-		ParentTask: dbtypes.NullInt32{Int32: data.ParentTask, Valid: data.ParentTask > 0},
+		ParentTask: dbtypes.NewNullInt32(data.ParentTask, data.ParentTask > 0),
 		Task:       data.Task,
 	}
 

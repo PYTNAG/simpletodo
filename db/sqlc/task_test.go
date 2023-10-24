@@ -10,7 +10,7 @@ import (
 )
 
 func createRandomTask(t *testing.T, l List, p *Task) Task {
-	var pTask = db.NullInt32{Valid: false}
+	var pTask = db.NewNullInt32(0, false)
 	if p != nil {
 		pTask.Int32 = p.ID
 		pTask.Valid = true
@@ -163,7 +163,7 @@ func TestGetChildTasks(t *testing.T) {
 		childs[i] = createRandomTask(t, mainList, &task)
 	}
 
-	tasks, err := testQueries.GetChildTasks(context.Background(), db.NullInt32{Int32: task.ID, Valid: true})
+	tasks, err := testQueries.GetChildTasks(context.Background(), db.NewNullInt32(task.ID, true))
 
 	require.NoError(t, err)
 	require.Equal(t, 5, len(tasks))
