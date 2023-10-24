@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	dbtypes "github.com/PYTNAG/simpletodo/db/types"
 	"github.com/gin-gonic/gin"
 )
 
@@ -86,7 +87,7 @@ func (s *Server) addTask(ctx *gin.Context) {
 
 	arg := db.AddTaskParams{
 		ListID:     list_id,
-		ParentTask: sql.NullInt32{Int32: data.ParentTask, Valid: data.ParentTask > 0},
+		ParentTask: dbtypes.NullInt32{Int32: data.ParentTask, Valid: data.ParentTask > 0},
 		Task:       data.Task,
 	}
 

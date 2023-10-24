@@ -10,6 +10,7 @@ import (
 
 	mockdb "github.com/PYTNAG/simpletodo/db/mock"
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	dbtypes "github.com/PYTNAG/simpletodo/db/types"
 	"github.com/PYTNAG/simpletodo/token"
 	"github.com/PYTNAG/simpletodo/util"
 	"github.com/stretchr/testify/require"
@@ -319,7 +320,7 @@ func TestAddTaskAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
-					ParentTask: sql.NullInt32{Int32: 0, Valid: false},
+					ParentTask: dbtypes.NullInt32{Int32: 0, Valid: false},
 					Task:       newTaskText,
 				}
 
@@ -353,7 +354,7 @@ func TestAddTaskAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
-					ParentTask: sql.NullInt32{Int32: taskId, Valid: true},
+					ParentTask: dbtypes.NullInt32{Int32: taskId, Valid: true},
 					Task:       newTaskText,
 				}
 
@@ -402,7 +403,7 @@ func TestAddTaskAPI(t *testing.T) {
 			buildStubs: func(store *mockdb.MockStore) {
 				params := db.AddTaskParams{
 					ListID:     listId,
-					ParentTask: sql.NullInt32{Int32: 0, Valid: false},
+					ParentTask: dbtypes.NullInt32{Int32: 0, Valid: false},
 					Task:       newTaskText,
 				}
 

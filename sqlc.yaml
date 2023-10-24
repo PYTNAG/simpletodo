@@ -10,3 +10,10 @@ sql:
         emit_interface: true
         package: "db"
         out: "./db/sqlc"
+        overrides:
+          - db_type: "pg_catalog.int4"
+            go_type: 
+              import: "github.com/PYTNAG/simpletodo/db/types"
+              package: "db"
+              type: "NullInt32"
+            nullable: true

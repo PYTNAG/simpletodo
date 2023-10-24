@@ -2,15 +2,15 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
+	db "github.com/PYTNAG/simpletodo/db/types"
 	"github.com/PYTNAG/simpletodo/util"
 	"github.com/stretchr/testify/require"
 )
 
 func createRandomTask(t *testing.T, l List, p *Task) Task {
-	var pTask = sql.NullInt32{Valid: false}
+	var pTask = db.NullInt32{Valid: false}
 	if p != nil {
 		pTask.Int32 = p.ID
 		pTask.Valid = true
@@ -163,7 +163,7 @@ func TestGetChildTasks(t *testing.T) {
 		childs[i] = createRandomTask(t, mainList, &task)
 	}
 
-	tasks, err := testQueries.GetChildTasks(context.Background(), sql.NullInt32{Int32: task.ID, Valid: true})
+	tasks, err := testQueries.GetChildTasks(context.Background(), db.NullInt32{Int32: task.ID, Valid: true})
 
 	require.NoError(t, err)
 	require.Equal(t, 5, len(tasks))

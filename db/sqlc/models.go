@@ -5,9 +5,9 @@
 package db
 
 import (
-	"database/sql"
 	"time"
 
+	db "github.com/PYTNAG/simpletodo/db/types"
 	"github.com/google/uuid"
 )
 
@@ -29,11 +29,11 @@ type Session struct {
 }
 
 type Task struct {
-	ID         int32         `json:"id"`
-	ListID     int32         `json:"list_id"`
-	ParentTask sql.NullInt32 `json:"parent_task"`
-	Task       string        `json:"task"`
-	Complete   bool          `json:"complete"`
+	ID         int32        `json:"id"`
+	ListID     int32        `json:"list_id"`
+	ParentTask db.NullInt32 `json:"parent_task"`
+	Task       string       `json:"task"`
+	Complete   bool         `json:"complete"`
 }
 
 type User struct {

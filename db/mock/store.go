@@ -10,10 +10,10 @@ package mockdb
 
 import (
 	context "context"
-	sql "database/sql"
 	reflect "reflect"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	db0 "github.com/PYTNAG/simpletodo/db/types"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -174,7 +174,7 @@ func (mr *MockStoreMockRecorder) DeleteUser(arg0, arg1 any) *gomock.Call {
 }
 
 // GetChildTasks mocks base method.
-func (m *MockStore) GetChildTasks(arg0 context.Context, arg1 sql.NullInt32) ([]db.Task, error) {
+func (m *MockStore) GetChildTasks(arg0 context.Context, arg1 db0.NullInt32) ([]db.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChildTasks", arg0, arg1)
 	ret0, _ := ret[0].([]db.Task)

@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	db "github.com/PYTNAG/simpletodo/db/types"
 )
 
 const addTask = `-- name: AddTask :one
@@ -19,9 +20,9 @@ INSERT INTO tasks (
 `
 
 type AddTaskParams struct {
-	ListID     int32         `json:"list_id"`
-	ParentTask sql.NullInt32 `json:"parent_task"`
-	Task       string        `json:"task"`
+	ListID     int32        `json:"list_id"`
+	ParentTask db.NullInt32 `json:"parent_task"`
+	Task       string       `json:"task"`
 }
 
 func (q *Queries) AddTask(ctx context.Context, arg AddTaskParams) (Task, error) {
@@ -62,7 +63,7 @@ SELECT id, list_id, parent_task, task, complete FROM tasks
 WHERE parent_task = $1
 `
 
-func (q *Queries) GetChildTasks(ctx context.Context, parentTask sql.NullInt32) ([]Task, error) {
+func (q *Queries) GetChildTasks(ctx context.Context, parentTask db.NullInt32) ([]Task, error) {
 	rows, err := q.db.QueryContext(ctx, getChildTasks, parentTask)
 	if err != nil {
 		return nil, err
