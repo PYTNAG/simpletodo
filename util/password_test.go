@@ -26,3 +26,11 @@ func TestPassword(t *testing.T) {
 	require.NotEmpty(t, repeatedHash)
 	require.NotEqual(t, hash, repeatedHash)
 }
+
+func TestTooLongPassword(t *testing.T) {
+	password := RandomString(73)
+
+	hash, err := HashPassword(password)
+	require.Error(t, err)
+	require.Empty(t, hash)
+}
