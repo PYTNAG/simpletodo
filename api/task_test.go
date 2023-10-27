@@ -67,7 +67,7 @@ func TestGetTasksAPI(t *testing.T) {
 				)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				tasks := util.Unmarshal[getTasksResponse](t, recorder.Body)
+				tasks := unmarshal[getTasksResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
 				require.NotEmpty(t, tasks.Tasks)
@@ -97,7 +97,7 @@ func TestGetTasksAPI(t *testing.T) {
 				)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				tasks := util.Unmarshal[getTasksResponse](t, recorder.Body)
+				tasks := unmarshal[getTasksResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
 				require.Empty(t, tasks.Tasks)
@@ -335,7 +335,7 @@ func TestAddTaskAPI(t *testing.T) {
 				)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				task := util.Unmarshal[taskResponse](t, recorder.Body)
+				task := unmarshal[taskResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
 				require.NotEmpty(t, task)
@@ -369,7 +369,7 @@ func TestAddTaskAPI(t *testing.T) {
 				)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				task := util.Unmarshal[taskResponse](t, recorder.Body)
+				task := unmarshal[taskResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
 				require.NotEmpty(t, task)

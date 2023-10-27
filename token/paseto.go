@@ -70,6 +70,7 @@ func (maker *PasetoMaker) VerifyToken(token string) (*Payload, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	payload.ID, err = uuid.Parse(uuidString)
 	if err != nil {
 		return nil, err

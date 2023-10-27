@@ -3,14 +3,9 @@ package util
 import (
 	"math/rand"
 	"strings"
-	"time"
 )
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz_()!$"
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 // RandomString generates a random string of length n
 func RandomString(n int) string {
@@ -46,10 +41,10 @@ func RandomID() int32 {
 }
 
 type FullUserInfo struct {
-	ID       int32  `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Hash     []byte `json:"hash"`
+	ID       int32
+	Username string
+	Password string
+	Hash     []byte
 }
 
 func RandomUser() FullUserInfo {

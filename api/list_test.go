@@ -141,7 +141,7 @@ func TestGetUserListsAPI(t *testing.T) {
 					After(getUserCall(store, user))
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				lists := util.Unmarshal[getUserListsResponse](t, recorder.Body)
+				lists := unmarshal[getUserListsResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
 
@@ -167,7 +167,7 @@ func TestGetUserListsAPI(t *testing.T) {
 					After(getUserCall(store, user))
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				lists := util.Unmarshal[getUserListsResponse](t, recorder.Body)
+				lists := unmarshal[getUserListsResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
 				require.Empty(t, lists.Lists)

@@ -1,6 +1,9 @@
 package api
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -75,4 +78,15 @@ func getTasksCall(store *mockdb.MockStore, listId int32, returnedTaskId int32) *
 			[]db.Task{
 				{ID: returnedTaskId},
 			}, nil)
+}
+
+func unmarshal[T any](t *testing.T, body *bytes.Buffer) *T {
+	data, err := io.ReadAll(body)
+	require.NoError(t, err)
+
+	var gotResult T
+	err = json.Unmarshal(data, &gotResult)
+	require.NoError(t, err)
+
+	return &gotResult
 }

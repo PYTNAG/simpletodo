@@ -133,7 +133,7 @@ func TestCreateUserAPI(t *testing.T) {
 				type userId struct {
 					UserID int32 `json:"user_id"`
 				}
-				gotResult := util.Unmarshal[userId](t, recorder.Body)
+				gotResult := unmarshal[userId](t, recorder.Body)
 
 				require.Equal(t, http.StatusCreated, recorder.Code)
 				require.Greater(t, gotResult.UserID, int32(0))
@@ -460,7 +460,7 @@ func TestLoginUserAPI(t *testing.T) {
 					}, nil)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				gotResult := util.Unmarshal[loginUserResponse](t, recorder.Body)
+				gotResult := unmarshal[loginUserResponse](t, recorder.Body)
 
 				require.Equal(t, http.StatusOK, recorder.Code)
 				require.Equal(t, gotResult.ID, user.ID)
