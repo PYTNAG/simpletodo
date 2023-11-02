@@ -13,7 +13,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8090:8090"
     environment:
       - DB_SOURCE=postgresql://root:mysecret@postgres:5432/simple_todo?sslmode=disable
       - GIN_MODE=release
