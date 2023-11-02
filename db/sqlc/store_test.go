@@ -11,12 +11,12 @@ import (
 func TestCreateUserTx(t *testing.T) {
 	store := NewStore(testDB)
 
-	n := 5
+	iterations := 5
 
 	errs := make(chan error)
 	results := make(chan CreateUserTxResult)
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < iterations; i++ {
 		go func() {
 			hash, err := util.HashPassword(util.RandomPassword())
 
@@ -36,7 +36,7 @@ func TestCreateUserTx(t *testing.T) {
 		}()
 	}
 
-	for i := 0; i < n; i++ {
+	for i := 0; i < iterations; i++ {
 		err := <-errs
 		require.NoError(t, err)
 
@@ -54,15 +54,15 @@ func TestCreateUserTx(t *testing.T) {
 		require.NotEmpty(t, result.List)
 		require.NotZero(t, result.List.ID)
 		require.Equal(t, result.User.ID, result.List.Author)
-		require.Equal(t, "default", result.List.Header)
+		require.Equal(t, DefaultLIstHeader, result.List.Header)
 
 		lists, err := store.GetLists(context.Background(), result.User.ID)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, lists)
 		require.Equal(t, 1, len(lists))
-		require.Equal(t, "default", lists[0].Header)
+		require.Equal(t, DefaultLIstHeader, lists[0].Header)
 
-		deleteTestUser(t, result.User)
+		deleteTestUser(t, &result.User)
 	}
 }

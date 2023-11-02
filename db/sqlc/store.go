@@ -6,6 +6,8 @@ import (
 	"fmt"
 )
 
+const DefaultLIstHeader = "default"
+
 // Provides all functions to execute db queries and transactions
 type Store interface {
 	CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
@@ -75,7 +77,7 @@ func (store *SQLStore) CreateUserTx(ctx context.Context, arg CreateUserTxParams)
 		// add default list
 		result.List, err = q.AddList(ctx, AddListParams{
 			Author: result.User.ID,
-			Header: "default",
+			Header: DefaultLIstHeader,
 		})
 
 		return err

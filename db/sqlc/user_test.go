@@ -9,44 +9,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createRandomUser(t *testing.T) User {
+func createRandomUser(t *testing.T, withDefaultList bool) (*User, *List) {
 	hash, err := util.HashPassword(util.RandomPassword())
 	require.NoError(t, err)
 
-	addUserArg := CreateUserParams{
+	createUserParams := CreateUserParams{
 		Username: util.RandomUsername(),
 		Hash:     hash,
 	}
 
-	user, err := testQueries.CreateUser(context.Background(), addUserArg)
+	user, err := testQueries.CreateUser(context.Background(), createUserParams)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
 
-	require.Equal(t, addUserArg.Username, user.Username)
-	require.Equal(t, addUserArg.Hash, user.Hash)
+	require.Equal(t, createUserParams.Username, user.Username)
+	require.Equal(t, createUserParams.Hash, user.Hash)
 
-	require.NotZero(t, user.ID)
+	require.Greater(t, user.ID, int32(0))
 
-	createRandomList(t, user)
+	var defaultList *List = nil
 
-	return user
+	if withDefaultList {
+		defaultList = createRandomList(t, &user)
+	}
+
+	return &user, defaultList
 }
 
-func deleteTestUser(t *testing.T, u User) {
-	r, err := testQueries.DeleteUser(context.Background(), u.ID)
+func deleteTestUser(t *testing.T, u *User) {
+	response, err := testQueries.DeleteUser(context.Background(), u.ID)
 
 	require.NoError(t, err)
-	require.Equal(t, DeleteUserRow{ID: u.ID, Username: u.Username}, r)
+
+	require.Equal(t, u.ID, response.ID)
+	require.Equal(t, u.Username, response.Username)
 }
 
 func TestCreateUser(t *testing.T) {
-	newUser := createRandomUser(t)
+	newUser, _ := createRandomUser(t, false)
 	deleteTestUser(t, newUser)
 }
 
 func TestGetUser(t *testing.T) {
-	expectedUser := createRandomUser(t)
+	expectedUser, _ := createRandomUser(t, false)
 
 	actualUser, err := testQueries.GetUser(context.Background(), expectedUser.Username)
 
@@ -60,7 +66,7 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	newUser := createRandomUser(t)
+	newUser, _ := createRandomUser(t, false)
 
 	deleteTestUser(t, newUser)
 
@@ -73,20 +79,20 @@ func TestDeleteUser(t *testing.T) {
 }
 
 func TestRehashUser(t *testing.T) {
-	expectedUser := createRandomUser(t)
+	expectedUser, _ := createRandomUser(t, false)
 	newHash, err := util.HashPassword(util.RandomPassword())
 
 	require.NoError(t, err)
 
-	arg := RehashUserParams{
+	params := RehashUserParams{
 		ID:      expectedUser.ID,
 		OldHash: expectedUser.Hash,
 		NewHash: newHash,
 	}
-	actualUser, err := testQueries.RehashUser(context.Background(), arg)
+	actualUser, err := testQueries.RehashUser(context.Background(), params)
 
 	require.NoError(t, err)
-	require.Equal(t, arg.NewHash, actualUser.Hash)
+	require.Equal(t, params.NewHash, actualUser.Hash)
 
-	deleteTestUser(t, actualUser)
+	deleteTestUser(t, &actualUser)
 }
