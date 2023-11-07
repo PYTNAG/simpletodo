@@ -1,4 +1,4 @@
-# Simple TODO app
+# Simple TODO API
 
 ## Contents
 
