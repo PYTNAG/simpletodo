@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/PYTNAG/simpletodo/pb";
+
+message DeleteTaskRequest {
+    int32 task_id = 1;
+}

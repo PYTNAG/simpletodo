@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/PYTNAG/simpletodo/pb";
+
+message Task {
+    int32 task_id = 1;
+    int32 list_id = 2;
+    string text = 3;
+    bool check = 4;
+    optional int32 parent_task_id = 5;
+}

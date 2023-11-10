@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/PYTNAG/simpletodo/pb";
+
+message CreateTaskRequest {
+    int32 list_id = 1;
+    string task_text = 2;
+    optional int32 parent_task_id = 3;
+}
+
+message CreateTaskResponse {
+    int32 task_id = 1;
+}

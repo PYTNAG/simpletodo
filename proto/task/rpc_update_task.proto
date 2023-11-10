@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/PYTNAG/simpletodo/pb";
+
+enum UpdateType {
+    UNSET = 0;
+    TEXT = 1;
+    CHECK = 2;
+}
+
+message UpdateTaskRequest {
+    int32 task_id = 1;
+    UpdateType type = 2;
+    optional string new_text = 3;
+}
