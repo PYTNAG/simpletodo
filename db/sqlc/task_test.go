@@ -57,17 +57,12 @@ func TestAddChildTask(t *testing.T) {
 	deleteTestUser(t, newUser)
 }
 
-func TestUpdateCheckTask(t *testing.T) {
+func TestToggleTask(t *testing.T) {
 	newUser, defaultList := createRandomUser(t, true)
 
 	task := createRandomTask(t, defaultList, nil)
 
-	params := UpdateCheckTaskParams{
-		ID:       task.ID,
-		Complete: true,
-	}
-
-	err := testQueries.UpdateCheckTask(context.Background(), params)
+	err := testQueries.ToggleTask(context.Background(), task.ID)
 
 	require.NoError(t, err)
 
@@ -88,11 +83,7 @@ func TestDeleteCheckedRootTasks(t *testing.T) {
 	for i := 0; i < tasksCount; i++ {
 		task := createRandomTask(t, defaultList, nil)
 		if i%2 == 0 {
-			params := UpdateCheckTaskParams{
-				ID:       task.ID,
-				Complete: true,
-			}
-			testQueries.UpdateCheckTask(context.Background(), params)
+			testQueries.ToggleTask(context.Background(), task.ID)
 		}
 	}
 

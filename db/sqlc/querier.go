@@ -26,7 +26,7 @@ type Querier interface {
 	GetTasks(ctx context.Context, listID int32) ([]Task, error)
 	GetUser(ctx context.Context, username string) (User, error)
 	RehashUser(ctx context.Context, arg RehashUserParams) (User, error)
-	UpdateCheckTask(ctx context.Context, arg UpdateCheckTaskParams) error
+	ToggleTask(ctx context.Context, id int32) error
 	UpdateTaskText(ctx context.Context, arg UpdateTaskTextParams) error
 }
 

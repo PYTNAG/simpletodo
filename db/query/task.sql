@@ -13,9 +13,9 @@ INSERT INTO tasks (
 	$1, $2, $3
 ) RETURNING *;
 
--- name: UpdateCheckTask :exec
+-- name: ToggleTask :exec
 UPDATE tasks
-	set complete = $2
+	set complete = not complete
 WHERE id = $1
 RETURNING *;
 
