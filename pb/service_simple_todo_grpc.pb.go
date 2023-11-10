@@ -27,6 +27,13 @@ type SimpleTODOClient interface {
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RehashUser(ctx context.Context, in *RehashUserRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
+	CreateList(ctx context.Context, in *CreateListRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetLists(ctx context.Context, in *GetListsRequest, opts ...grpc.CallOption) (SimpleTODO_GetListsClient, error)
+	DeleteList(ctx context.Context, in *DeleteListRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*CreateTaskResponse, error)
+	GetTasks(ctx context.Context, in *GetTasksRequest, opts ...grpc.CallOption) (SimpleTODO_GetTasksClient, error)
+	DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type simpleTODOClient struct {
@@ -73,6 +80,115 @@ func (c *simpleTODOClient) LoginUser(ctx context.Context, in *LoginUserRequest, 
 	return out, nil
 }
 
+func (c *simpleTODOClient) CreateList(ctx context.Context, in *CreateListRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/pb.SimpleTODO/CreateList", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *simpleTODOClient) GetLists(ctx context.Context, in *GetListsRequest, opts ...grpc.CallOption) (SimpleTODO_GetListsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &SimpleTODO_ServiceDesc.Streams[0], "/pb.SimpleTODO/GetLists", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &simpleTODOGetListsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type SimpleTODO_GetListsClient interface {
+	Recv() (*List, error)
+	grpc.ClientStream
+}
+
+type simpleTODOGetListsClient struct {
+	grpc.ClientStream
+}
+
+func (x *simpleTODOGetListsClient) Recv() (*List, error) {
+	m := new(List)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *simpleTODOClient) DeleteList(ctx context.Context, in *DeleteListRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/pb.SimpleTODO/DeleteList", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *simpleTODOClient) CreateTask(ctx context.Context, in *CreateTaskRequest, opts ...grpc.CallOption) (*CreateTaskResponse, error) {
+	out := new(CreateTaskResponse)
+	err := c.cc.Invoke(ctx, "/pb.SimpleTODO/CreateTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *simpleTODOClient) GetTasks(ctx context.Context, in *GetTasksRequest, opts ...grpc.CallOption) (SimpleTODO_GetTasksClient, error) {
+	stream, err := c.cc.NewStream(ctx, &SimpleTODO_ServiceDesc.Streams[1], "/pb.SimpleTODO/GetTasks", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &simpleTODOGetTasksClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type SimpleTODO_GetTasksClient interface {
+	Recv() (*Task, error)
+	grpc.ClientStream
+}
+
+type simpleTODOGetTasksClient struct {
+	grpc.ClientStream
+}
+
+func (x *simpleTODOGetTasksClient) Recv() (*Task, error) {
+	m := new(Task)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *simpleTODOClient) DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/pb.SimpleTODO/DeleteTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *simpleTODOClient) UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/pb.SimpleTODO/UpdateTask", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SimpleTODOServer is the server API for SimpleTODO service.
 // All implementations must embed UnimplementedSimpleTODOServer
 // for forward compatibility
@@ -81,6 +197,13 @@ type SimpleTODOServer interface {
 	DeleteUser(context.Context, *DeleteUserRequest) (*emptypb.Empty, error)
 	RehashUser(context.Context, *RehashUserRequest) (*emptypb.Empty, error)
 	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
+	CreateList(context.Context, *CreateListRequest) (*emptypb.Empty, error)
+	GetLists(*GetListsRequest, SimpleTODO_GetListsServer) error
+	DeleteList(context.Context, *DeleteListRequest) (*emptypb.Empty, error)
+	CreateTask(context.Context, *CreateTaskRequest) (*CreateTaskResponse, error)
+	GetTasks(*GetTasksRequest, SimpleTODO_GetTasksServer) error
+	DeleteTask(context.Context, *DeleteTaskRequest) (*emptypb.Empty, error)
+	UpdateTask(context.Context, *UpdateTaskRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSimpleTODOServer()
 }
 
@@ -99,6 +222,27 @@ func (UnimplementedSimpleTODOServer) RehashUser(context.Context, *RehashUserRequ
 }
 func (UnimplementedSimpleTODOServer) LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
+}
+func (UnimplementedSimpleTODOServer) CreateList(context.Context, *CreateListRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateList not implemented")
+}
+func (UnimplementedSimpleTODOServer) GetLists(*GetListsRequest, SimpleTODO_GetListsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetLists not implemented")
+}
+func (UnimplementedSimpleTODOServer) DeleteList(context.Context, *DeleteListRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteList not implemented")
+}
+func (UnimplementedSimpleTODOServer) CreateTask(context.Context, *CreateTaskRequest) (*CreateTaskResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTask not implemented")
+}
+func (UnimplementedSimpleTODOServer) GetTasks(*GetTasksRequest, SimpleTODO_GetTasksServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetTasks not implemented")
+}
+func (UnimplementedSimpleTODOServer) DeleteTask(context.Context, *DeleteTaskRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTask not implemented")
+}
+func (UnimplementedSimpleTODOServer) UpdateTask(context.Context, *UpdateTaskRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateTask not implemented")
 }
 func (UnimplementedSimpleTODOServer) mustEmbedUnimplementedSimpleTODOServer() {}
 
@@ -185,6 +329,138 @@ func _SimpleTODO_LoginUser_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SimpleTODO_CreateList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleTODOServer).CreateList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SimpleTODO/CreateList",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleTODOServer).CreateList(ctx, req.(*CreateListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SimpleTODO_GetLists_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetListsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(SimpleTODOServer).GetLists(m, &simpleTODOGetListsServer{stream})
+}
+
+type SimpleTODO_GetListsServer interface {
+	Send(*List) error
+	grpc.ServerStream
+}
+
+type simpleTODOGetListsServer struct {
+	grpc.ServerStream
+}
+
+func (x *simpleTODOGetListsServer) Send(m *List) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _SimpleTODO_DeleteList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleTODOServer).DeleteList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SimpleTODO/DeleteList",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleTODOServer).DeleteList(ctx, req.(*DeleteListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SimpleTODO_CreateTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleTODOServer).CreateTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SimpleTODO/CreateTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleTODOServer).CreateTask(ctx, req.(*CreateTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SimpleTODO_GetTasks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetTasksRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(SimpleTODOServer).GetTasks(m, &simpleTODOGetTasksServer{stream})
+}
+
+type SimpleTODO_GetTasksServer interface {
+	Send(*Task) error
+	grpc.ServerStream
+}
+
+type simpleTODOGetTasksServer struct {
+	grpc.ServerStream
+}
+
+func (x *simpleTODOGetTasksServer) Send(m *Task) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _SimpleTODO_DeleteTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleTODOServer).DeleteTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SimpleTODO/DeleteTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleTODOServer).DeleteTask(ctx, req.(*DeleteTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SimpleTODO_UpdateTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleTODOServer).UpdateTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SimpleTODO/UpdateTask",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleTODOServer).UpdateTask(ctx, req.(*UpdateTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SimpleTODO_ServiceDesc is the grpc.ServiceDesc for SimpleTODO service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -208,7 +484,38 @@ var SimpleTODO_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "LoginUser",
 			Handler:    _SimpleTODO_LoginUser_Handler,
 		},
+		{
+			MethodName: "CreateList",
+			Handler:    _SimpleTODO_CreateList_Handler,
+		},
+		{
+			MethodName: "DeleteList",
+			Handler:    _SimpleTODO_DeleteList_Handler,
+		},
+		{
+			MethodName: "CreateTask",
+			Handler:    _SimpleTODO_CreateTask_Handler,
+		},
+		{
+			MethodName: "DeleteTask",
+			Handler:    _SimpleTODO_DeleteTask_Handler,
+		},
+		{
+			MethodName: "UpdateTask",
+			Handler:    _SimpleTODO_UpdateTask_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetLists",
+			Handler:       _SimpleTODO_GetLists_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetTasks",
+			Handler:       _SimpleTODO_GetTasks_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "service_simple_todo.proto",
 }

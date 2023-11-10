@@ -3,23 +3,23 @@ syntax = "proto3";
 package pb;
 
 // users
-import "user/rpc_create_user.proto";
-import "user/rpc_delete_user.proto";
-import "user/rpc_rehash_user.proto";
-import "user/rpc_login_user.proto";
+import "rpc_create_user.proto";
+import "rpc_delete_user.proto";
+import "rpc_rehash_user.proto";
+import "rpc_login_user.proto";
 
 // lists
-import "list/list.proto";
-import "list/rpc_create_list.proto";
-import "list/rpc_get_lists.proto";
-import "list/rpc_delete_list.proto";
+import "list.proto";
+import "rpc_create_list.proto";
+import "rpc_get_lists.proto";
+import "rpc_delete_list.proto";
 
 // tasks
-import "task/task.proto";
-import "task/rpc_create_task.proto";
-import "task/rpc_get_tasks.proto";
-import "task/rpc_delete_task.proto";
-import "task/rpc_update_task.proto";
+import "task.proto";
+import "rpc_create_task.proto";
+import "rpc_get_tasks.proto";
+import "rpc_delete_task.proto";
+import "rpc_update_task.proto";
 
 import "google/protobuf/empty.proto";
 
