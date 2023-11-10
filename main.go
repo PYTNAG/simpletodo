@@ -3,10 +3,14 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net"
 
-	"github.com/PYTNAG/simpletodo/api"
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
+	"github.com/PYTNAG/simpletodo/gapi"
+	"github.com/PYTNAG/simpletodo/pb"
 	"github.com/PYTNAG/simpletodo/util"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	_ "github.com/lib/pq"
 )
@@ -24,13 +28,29 @@ func main() {
 
 	store := db.NewStore(conn)
 
-	server, err := api.NewServer(cfg, store)
+	startGrpcServer(cfg, store)
+}
+
+func startGrpcServer(cfg util.Config, store db.Store) {
+	grpcServer := grpc.NewServer()
+
+	server, err := gapi.NewServer(cfg, store)
 	if err != nil {
-		log.Fatal("Cannot create server: ", err)
+		log.Fatal("cannot create server: ", err)
 	}
 
-	err = server.Start(cfg.ServerAddr)
+	pb.RegisterSimpleTODOServer(grpcServer, server)
+	reflection.Register(grpcServer)
+
+	listener, err := net.Listen("tcp", cfg.GrpcServerAddr)
 	if err != nil {
-		log.Fatal("Cannot start server: ", err)
+		log.Fatal("cannot create listener: ", err)
+	}
+
+	log.Printf("start gRPC server at %s", listener.Addr())
+
+	err = grpcServer.Serve(listener)
+	if err != nil {
+		log.Fatal("cannot start gRPC server: ", err)
 	}
 }
