@@ -3,11 +3,17 @@ syntax = "proto3";
 package pb;
 
 import "rpc_create_user.proto";
+import "rpc_delete_user.proto";
+import "rpc_rehash_user.proto";
 import "rpc_login_user.proto";
+
+import "google/protobuf/empty.proto";
 
 option go_package = "github.com/PYTNAG/simpletodo/pb";
 
 service SimpleTODO {
     rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {}
+    rpc DeleteUser (DeleteUserRequest) returns (google.protobuf.Empty) {}
+    rpc RehashUser (RehashUserRequest) returns (google.protobuf.Empty) {}
     rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {}
 }
