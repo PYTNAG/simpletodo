@@ -13,7 +13,7 @@ INSERT INTO users (
 -- name: RehashUser :one
 UPDATE users
 	set hash = sqlc.arg(new_hash)
-WHERE id = $1 and hash = sqlc.arg(old_hash)
+WHERE id = $1
 RETURNING *;
 
 -- name: DeleteUser :one

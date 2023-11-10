@@ -28,7 +28,7 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 	// go-paseto decodes key using hex.DecodeString inside
 	pasetoMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot create token maker: %w", err)
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
 	}
 
 	server := &Server{
@@ -56,12 +56,6 @@ func (server *Server) setupRouter() {
 
 	taskRequestRoutes := server.getNewIdRequestGroup(listRequestRoutes, "/tasks/:%s", taskIdKey)
 	taskRequestRoutes.Use(checkTaskParentListMiddleware(server.store))
-
-	// user
-	router.POST("/users", server.createUser)
-	router.POST("/users/login", server.loginUser)
-	userRequestRoutes.PUT("", server.rehashUser)
-	userRequestRoutes.DELETE("", server.deleteUser)
 
 	// lists
 	userRequestRoutes.GET("/lists", server.getUserLists)

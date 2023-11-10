@@ -63,18 +63,17 @@ func (q *Queries) GetUser(ctx context.Context, username string) (User, error) {
 const rehashUser = `-- name: RehashUser :one
 UPDATE users
 	set hash = $2
-WHERE id = $1 and hash = $3
+WHERE id = $1
 RETURNING id, username, hash
 `
 
 type RehashUserParams struct {
 	ID      int32  `json:"id"`
 	NewHash []byte `json:"new_hash"`
-	OldHash []byte `json:"old_hash"`
 }
 
 func (q *Queries) RehashUser(ctx context.Context, arg RehashUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, rehashUser, arg.ID, arg.NewHash, arg.OldHash)
+	row := q.db.QueryRowContext(ctx, rehashUser, arg.ID, arg.NewHash)
 	var i User
 	err := row.Scan(&i.ID, &i.Username, &i.Hash)
 	return i, err

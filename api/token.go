@@ -43,25 +43,25 @@ func (s *Server) refreshAccessToken(ctx *gin.Context) {
 	}
 
 	if session.IsBlocked {
-		err := fmt.Errorf("Blocked session")
+		err := fmt.Errorf("blocked session")
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err, ""))
 		return
 	}
 
 	if session.Username != refreshPayload.Username {
-		err := fmt.Errorf("Incorrect session user")
+		err := fmt.Errorf("incorrect session user")
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err, ""))
 		return
 	}
 
 	if session.RefreshToken != data.RefreshToken {
-		err := fmt.Errorf("Mismatched session token")
+		err := fmt.Errorf("mismatched session token")
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err, ""))
 		return
 	}
 
 	if time.Now().After(session.ExpiresAt) {
-		err := fmt.Errorf("Expired session")
+		err := fmt.Errorf("expired session")
 		ctx.JSON(http.StatusUnauthorized, errorResponse(err, ""))
 		return
 	}

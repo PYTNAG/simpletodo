@@ -86,7 +86,6 @@ func TestRehashUser(t *testing.T) {
 
 	params := RehashUserParams{
 		ID:      expectedUser.ID,
-		OldHash: expectedUser.Hash,
 		NewHash: newHash,
 	}
 	actualUser, err := testQueries.RehashUser(context.Background(), params)

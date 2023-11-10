@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -43,6 +44,40 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 	}
 
 	return response, nil
+}
+
+func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*emptypb.Empty, error) {
+	if _, err := s.store.DeleteUser(ctx, req.GetUserId()); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Errorf(codes.NotFound, "user with id %d doesn't exist", req.GetUserId())
+		}
+
+		return nil, status.Errorf(codes.Internal, "cannot delete user: %s", err)
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (s *Server) RehashUser(ctx context.Context, req *pb.RehashUserRequest) (*emptypb.Empty, error) {
+	newHash, err := util.HashPassword(req.GetNewPassword())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	params := db.RehashUserParams{
+		ID:      req.GetUserId(),
+		NewHash: newHash,
+	}
+
+	if user, err := s.store.RehashUser(ctx, params); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Errorf(codes.NotFound, "wrong user id or actual password: %+v", user)
+		}
+
+		return nil, status.Errorf(codes.Internal, "failed to rehash user: %s", err)
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {

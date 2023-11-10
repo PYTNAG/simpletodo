@@ -5,7 +5,6 @@ package pb;
 option go_package = "github.com/PYTNAG/simpletodo/pb";
 
 message RehashUserRequest {
-    string user_id = 1;
-    string old_password = 2;
-    string new_password = 3;
+    int32 user_id = 1;
+    string new_password = 2;
 }
