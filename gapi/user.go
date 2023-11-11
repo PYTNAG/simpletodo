@@ -15,6 +15,11 @@ import (
 )
 
 func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+	violations := validateCreateUserRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	hash, err := util.HashPassword(req.GetPassword())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -47,6 +52,11 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 }
 
 func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*emptypb.Empty, error) {
+	violations := validateDeleteUserRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	if _, err := s.store.DeleteUser(ctx, req.GetUserId()); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "user with id %d doesn't exist", req.GetUserId())
@@ -59,6 +69,11 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*em
 }
 
 func (s *Server) RehashUser(ctx context.Context, req *pb.RehashUserRequest) (*emptypb.Empty, error) {
+	violations := validateRehashUserRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	newHash, err := util.HashPassword(req.GetNewPassword())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -81,6 +96,11 @@ func (s *Server) RehashUser(ctx context.Context, req *pb.RehashUserRequest) (*em
 }
 
 func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+	violations := validateLoginUserRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	user, err := s.store.GetUser(ctx, req.GetUsername())
 	if err != nil {
 		if err == sql.ErrNoRows {
