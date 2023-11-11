@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/PYTNAG/simpletodo/pb";
+
+message RefreshAccessTokenRequest {
+    string refresh_token = 1;
+}
+
+message RefreshAccessTokenResponse {
+    string access_token = 1;
+    google.protobuf.Timestamp access_token_expired_at = 2;
+}

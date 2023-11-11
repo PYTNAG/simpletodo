@@ -21,6 +21,9 @@ import "rpc_get_tasks.proto";
 import "rpc_delete_task.proto";
 import "rpc_update_task.proto";
 
+// tokens
+import "rpc_refresh_access_token.proto";
+
 import "google/protobuf/empty.proto";
 
 option go_package = "github.com/PYTNAG/simpletodo/pb";
@@ -39,4 +42,6 @@ service SimpleTODO {
     rpc GetTasks (GetTasksRequest) returns (stream Task) {}
     rpc DeleteTask (DeleteTaskRequest) returns (google.protobuf.Empty) {}
     rpc UpdateTask (UpdateTaskRequest) returns (google.protobuf.Empty) {}
+
+    rpc RefreshAccessToken (RefreshAccessTokenRequest) returns (RefreshAccessTokenResponse) {}
 }

@@ -34,6 +34,7 @@ type SimpleTODOClient interface {
 	GetTasks(ctx context.Context, in *GetTasksRequest, opts ...grpc.CallOption) (SimpleTODO_GetTasksClient, error)
 	DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RefreshAccessToken(ctx context.Context, in *RefreshAccessTokenRequest, opts ...grpc.CallOption) (*RefreshAccessTokenResponse, error)
 }
 
 type simpleTODOClient struct {
@@ -189,6 +190,15 @@ func (c *simpleTODOClient) UpdateTask(ctx context.Context, in *UpdateTaskRequest
 	return out, nil
 }
 
+func (c *simpleTODOClient) RefreshAccessToken(ctx context.Context, in *RefreshAccessTokenRequest, opts ...grpc.CallOption) (*RefreshAccessTokenResponse, error) {
+	out := new(RefreshAccessTokenResponse)
+	err := c.cc.Invoke(ctx, "/pb.SimpleTODO/RefreshAccessToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SimpleTODOServer is the server API for SimpleTODO service.
 // All implementations must embed UnimplementedSimpleTODOServer
 // for forward compatibility
@@ -204,6 +214,7 @@ type SimpleTODOServer interface {
 	GetTasks(*GetTasksRequest, SimpleTODO_GetTasksServer) error
 	DeleteTask(context.Context, *DeleteTaskRequest) (*emptypb.Empty, error)
 	UpdateTask(context.Context, *UpdateTaskRequest) (*emptypb.Empty, error)
+	RefreshAccessToken(context.Context, *RefreshAccessTokenRequest) (*RefreshAccessTokenResponse, error)
 	mustEmbedUnimplementedSimpleTODOServer()
 }
 
@@ -243,6 +254,9 @@ func (UnimplementedSimpleTODOServer) DeleteTask(context.Context, *DeleteTaskRequ
 }
 func (UnimplementedSimpleTODOServer) UpdateTask(context.Context, *UpdateTaskRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateTask not implemented")
+}
+func (UnimplementedSimpleTODOServer) RefreshAccessToken(context.Context, *RefreshAccessTokenRequest) (*RefreshAccessTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshAccessToken not implemented")
 }
 func (UnimplementedSimpleTODOServer) mustEmbedUnimplementedSimpleTODOServer() {}
 
@@ -461,6 +475,24 @@ func _SimpleTODO_UpdateTask_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SimpleTODO_RefreshAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshAccessTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SimpleTODOServer).RefreshAccessToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SimpleTODO/RefreshAccessToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SimpleTODOServer).RefreshAccessToken(ctx, req.(*RefreshAccessTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SimpleTODO_ServiceDesc is the grpc.ServiceDesc for SimpleTODO service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -503,6 +535,10 @@ var SimpleTODO_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateTask",
 			Handler:    _SimpleTODO_UpdateTask_Handler,
+		},
+		{
+			MethodName: "RefreshAccessToken",
+			Handler:    _SimpleTODO_RefreshAccessToken_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
