@@ -26,7 +26,7 @@ func (s *Server) createUser(ctx *gin.Context) {
 
 	hash, err := util.HashPassword(data.Password)
 	if err != nil {
-		ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
+		ctx.JSON(http.StatusForbidden, errorResponse(err, "maximum length of password is 72 bytes"))
 		return
 	}
 
@@ -40,7 +40,7 @@ func (s *Server) createUser(ctx *gin.Context) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "User "+data.Username+" already exist"))
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "user "+data.Username+" already exist"))
 			return
 		}
 
@@ -56,7 +56,7 @@ func (s *Server) deleteUser(ctx *gin.Context) {
 
 	if _, err := s.store.DeleteUser(ctx, userId); err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "User doesn't exist"))
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "user doesn't exist"))
 			return
 		}
 
@@ -84,13 +84,13 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 
 	oldHash, err := util.HashPassword(data.OldPassword)
 	if err != nil {
-		ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
+		ctx.JSON(http.StatusForbidden, errorResponse(err, "maximum length of password is 72 bytes"))
 		return
 	}
 
 	newHash, err := util.HashPassword(data.NewPassword)
 	if err != nil {
-		ctx.JSON(http.StatusForbidden, errorResponse(err, "Maximum length of password is 72 bytes"))
+		ctx.JSON(http.StatusForbidden, errorResponse(err, "maximum length of password is 72 bytes"))
 		return
 	}
 
@@ -102,7 +102,7 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 
 	if _, err := s.store.RehashUser(ctx, arg); err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusForbidden, errorResponse(err, "Wrong user id or actual password"))
+			ctx.JSON(http.StatusForbidden, errorResponse(err, "wrong user id or actual password"))
 			return
 		}
 
@@ -137,7 +137,7 @@ func (s *Server) loginUser(ctx *gin.Context) {
 	user, err := s.store.GetUser(ctx, data.Username)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err, fmt.Sprintf("There is no user with username %s", data.Username)))
+			ctx.JSON(http.StatusNotFound, errorResponse(err, fmt.Sprintf("there is no user with username %s", data.Username)))
 			return
 		}
 
@@ -147,19 +147,19 @@ func (s *Server) loginUser(ctx *gin.Context) {
 
 	err = util.CheckPassword(data.Password, user.Hash)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(err, "Wrong password"))
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err, "wrong password"))
 		return
 	}
 
 	accesToken, accessPayload, err := s.pasetoMaker.CreateToken(user.Username, s.config.AccessTokenDuration)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "cannot create UUID"))
 		return
 	}
 
 	refreshToken, refreshPayload, err := s.pasetoMaker.CreateToken(user.Username, s.config.RefreshTokenDuration)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "cannot create UUID"))
 	}
 
 	params := db.CreateSessionParams{
@@ -174,7 +174,7 @@ func (s *Server) loginUser(ctx *gin.Context) {
 
 	session, err := s.store.CreateSession(ctx, params)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "Cannot create UUID"))
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err, "cannot create UUID"))
 	}
 
 	response := loginUserResponse{

@@ -23,21 +23,21 @@ func authMiddleware(pasetoMaker token.PasetoMaker) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authorizationHeader := ctx.GetHeader(authorizationHaderKey)
 		if len(authorizationHeader) == 0 {
-			err := errors.New("Authorization header is not provided")
+			err := errors.New("authorization header is not provided")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err, ""))
 			return
 		}
 
 		fields := strings.Fields(authorizationHeader)
 		if len(fields) < 2 {
-			err := errors.New("Invalid authorization header format")
+			err := errors.New("invalid authorization header format")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err, ""))
 			return
 		}
 
 		authorizationType := strings.ToLower(fields[0])
 		if authorizationType != authorizationTypeBearer {
-			err := fmt.Errorf("Unsupported authorization type %s", authorizationType)
+			err := fmt.Errorf("unsupported authorization type %s", authorizationType)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err, ""))
 			return
 		}
@@ -83,7 +83,7 @@ func compareRequestedIdMiddleware(store db.Store) gin.HandlerFunc {
 		user, err := store.GetUser(ctx, authPayload.Username)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				ctx.AbortWithStatusJSON(http.StatusForbidden, errorResponse(err, "Authorized user doesn't exist"))
+				ctx.AbortWithStatusJSON(http.StatusForbidden, errorResponse(err, "authorized user doesn't exist"))
 				return
 			}
 
@@ -92,7 +92,7 @@ func compareRequestedIdMiddleware(store db.Store) gin.HandlerFunc {
 		}
 
 		if user.ID != requestedUserId {
-			err := fmt.Errorf("You can't update other user")
+			err := fmt.Errorf("you can't update other user")
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse(err, ""))
 			return
 		}
@@ -109,7 +109,7 @@ func checkListAuthorMiddleware(store db.Store) gin.HandlerFunc {
 		userLists, err := store.GetLists(ctx, requestedUserId)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				ctx.AbortWithStatusJSON(http.StatusForbidden, errorResponse(err, fmt.Sprintf("User %d doesn't have any lists", requestedUserId)))
+				ctx.AbortWithStatusJSON(http.StatusForbidden, errorResponse(err, fmt.Sprintf("user %d doesn't have any lists", requestedUserId)))
 				return
 			}
 
@@ -124,7 +124,7 @@ func checkListAuthorMiddleware(store db.Store) gin.HandlerFunc {
 			}
 		}
 
-		err = fmt.Errorf("User %d doesn't have list %d", requestedUserId, requestedListId)
+		err = fmt.Errorf("user %d doesn't have list %d", requestedUserId, requestedListId)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err, ""))
 	}
 }
@@ -138,7 +138,7 @@ func checkTaskParentListMiddleware(store db.Store) gin.HandlerFunc {
 		tasks, err := store.GetTasks(ctx, requestedListId)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				additionalMsg := fmt.Sprintf("User %d doesn't have any tasks in list %d", requestedUserId, requestedListId)
+				additionalMsg := fmt.Sprintf("user %d doesn't have any tasks in list %d", requestedUserId, requestedListId)
 				ctx.AbortWithStatusJSON(http.StatusForbidden, errorResponse(err, additionalMsg))
 				return
 			}
@@ -154,7 +154,7 @@ func checkTaskParentListMiddleware(store db.Store) gin.HandlerFunc {
 			}
 		}
 
-		err = fmt.Errorf("User %d doesn't have task %d in list %d", requestedUserId, requestedTaskId, requestedListId)
+		err = fmt.Errorf("user %d doesn't have task %d in list %d", requestedUserId, requestedTaskId, requestedListId)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, errorResponse(err, ""))
 	}
 }
