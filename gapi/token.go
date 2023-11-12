@@ -42,7 +42,7 @@ func (s *Server) RefreshAccessToken(ctx context.Context, req *pb.RefreshAccessTo
 		return nil, status.Error(codes.PermissionDenied, "expired session")
 	}
 
-	accesToken, accessPayload, err := s.pasetoMaker.CreateToken(refreshPayload.Username, s.config.AccessTokenDuration)
+	accesToken, accessPayload, err := s.pasetoMaker.CreateToken(refreshPayload.Username, refreshPayload.UserId, s.config.AccessTokenDuration)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot create uuid: %s", err)
 	}

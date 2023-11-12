@@ -52,9 +52,18 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 }
 
 func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*emptypb.Empty, error) {
+	payload, err := s.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
 	violations := validateDeleteUserRequest(req)
 	if violations != nil {
 		return nil, invalidArgumentError(violations)
+	}
+
+	if payload.UserId != req.GetUserId() {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
 	}
 
 	if _, err := s.store.DeleteUser(ctx, req.GetUserId()); err != nil {
@@ -69,9 +78,18 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*em
 }
 
 func (s *Server) RehashUser(ctx context.Context, req *pb.RehashUserRequest) (*emptypb.Empty, error) {
+	payload, err := s.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
 	violations := validateRehashUserRequest(req)
 	if violations != nil {
 		return nil, invalidArgumentError(violations)
+	}
+
+	if payload.UserId != req.GetUserId() {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
 	}
 
 	newHash, err := util.HashPassword(req.GetNewPassword())
@@ -115,12 +133,12 @@ func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 		return nil, status.Errorf(codes.Unauthenticated, "wrong password")
 	}
 
-	accesToken, accessPayload, err := s.pasetoMaker.CreateToken(user.Username, s.config.AccessTokenDuration)
+	accesToken, accessPayload, err := s.pasetoMaker.CreateToken(user.Username, user.ID, s.config.AccessTokenDuration)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot create UUID: %s", err)
 	}
 
-	refreshToken, refreshPayload, err := s.pasetoMaker.CreateToken(user.Username, s.config.RefreshTokenDuration)
+	refreshToken, refreshPayload, err := s.pasetoMaker.CreateToken(user.Username, user.ID, s.config.RefreshTokenDuration)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot create UUID: %s", err)
 	}
