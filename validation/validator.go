@@ -17,10 +17,15 @@ var (
 func ValidateStringLength(str string, min, max int) error {
 	length := len(str)
 
-	if length < min || (max != InfUpperBound && length > max) {
+	if (min != InfLowerBound && length < min) || (max != InfUpperBound && length > max) {
 		if max == InfUpperBound {
 			return fmt.Errorf("must contain at least %d characters", min)
 		}
+
+		if min == InfLowerBound {
+			return fmt.Errorf("must contain at most %d characters", max)
+		}
+
 		return fmt.Errorf("must contain from %d to %d characters", min, max)
 	}
 
@@ -52,7 +57,15 @@ func ValidatePassword(password string) error {
 }
 
 func ValidateUserId(userId int32) error {
-	if err := ValidateInteger(int(userId), 1, (1<<31)-1); err != nil {
+	if err := ValidateInteger(int(userId), 1, (1<<32)-1); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ValidateHeader(header string) error {
+	if err := ValidateStringLength(header, 1, InfUpperBound); err != nil {
 		return err
 	}
 

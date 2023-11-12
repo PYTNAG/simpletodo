@@ -12,12 +12,17 @@ import (
 )
 
 func (s *Server) CreateList(ctx context.Context, req *pb.CreateListRequest) (*emptypb.Empty, error) {
-	arg := db.AddListParams{
+	violations := validateCreateList(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
+	params := db.AddListParams{
 		Author: req.GetUserId(),
 		Header: req.GetHeader(),
 	}
 
-	if _, err := s.store.AddList(ctx, arg); err != nil {
+	if _, err := s.store.AddList(ctx, params); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create list: %s", err)
 	}
 
