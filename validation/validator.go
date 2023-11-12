@@ -56,8 +56,8 @@ func ValidatePassword(password string) error {
 	return ValidateStringLength(password, 6, InfUpperBound)
 }
 
-func ValidateUserId(userId int32) error {
-	if err := ValidateInteger(int(userId), 1, (1<<32)-1); err != nil {
+func ValidateId(id int32) error {
+	if err := ValidateInteger(int(id), 1, (1<<32)-1); err != nil {
 		return err
 	}
 

@@ -12,9 +12,18 @@ import (
 )
 
 func (s *Server) CreateList(ctx context.Context, req *pb.CreateListRequest) (*emptypb.Empty, error) {
+	payload, err := s.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
 	violations := validateCreateList(req)
 	if violations != nil {
 		return nil, invalidArgumentError(violations)
+	}
+
+	if payload.UserId != req.GetUserId() {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
 	}
 
 	params := db.AddListParams{
@@ -30,6 +39,20 @@ func (s *Server) CreateList(ctx context.Context, req *pb.CreateListRequest) (*em
 }
 
 func (s *Server) GetLists(req *pb.GetListsRequest, stream pb.SimpleTODO_GetListsServer) error {
+	payload, err := s.authorizeUser(stream.Context())
+	if err != nil {
+		return unauthenticatedError(err)
+	}
+
+	violations := validateGetLists(req)
+	if violations != nil {
+		return invalidArgumentError(violations)
+	}
+
+	if payload.UserId == req.GetUserId() {
+		return status.Error(codes.PermissionDenied, "permission denied")
+	}
+
 	lists, err := s.store.GetLists(stream.Context(), req.GetUserId())
 	if err != nil && err != sql.ErrNoRows {
 		return status.Errorf(codes.Internal, "failed to get lists: %s", err)
@@ -49,7 +72,34 @@ func (s *Server) GetLists(req *pb.GetListsRequest, stream pb.SimpleTODO_GetLists
 }
 
 func (s *Server) DeleteList(ctx context.Context, req *pb.DeleteListRequest) (*emptypb.Empty, error) {
-	err := s.store.DeleteList(ctx, req.GetListId())
+	payload, err := s.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
+	violations := validateDeleteList(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
+	lists, err := s.store.GetLists(ctx, payload.UserId)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "failed to get \"%s\"'s lists", payload.Username)
+	}
+
+	var isListFound bool = false
+	for _, list := range lists {
+		if list.ID == req.GetListId() {
+			isListFound = true
+			break
+		}
+	}
+
+	if !isListFound {
+		return nil, status.Error(codes.PermissionDenied, "permission denied")
+	}
+
+	err = s.store.DeleteList(ctx, req.GetListId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete list: %s", err)
 	}

@@ -19,7 +19,7 @@ func validateCreateUserRequest(req *pb.CreateUserRequest) (violations []*errdeta
 }
 
 func validateDeleteUserRequest(req *pb.DeleteUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
-	if err := validation.ValidateUserId(req.GetUserId()); err != nil {
+	if err := validation.ValidateId(req.GetUserId()); err != nil {
 		violations = append(violations, fieldViolation("user_id", err))
 	}
 
@@ -27,7 +27,7 @@ func validateDeleteUserRequest(req *pb.DeleteUserRequest) (violations []*errdeta
 }
 
 func validateRehashUserRequest(req *pb.RehashUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
-	if err := validation.ValidateUserId(req.GetUserId()); err != nil {
+	if err := validation.ValidateId(req.GetUserId()); err != nil {
 		violations = append(violations, fieldViolation("user_id", err))
 	}
 
