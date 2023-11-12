@@ -9,9 +9,12 @@ import (
 	"github.com/PYTNAG/simpletodo/gapi"
 	"github.com/PYTNAG/simpletodo/pb"
 	"github.com/PYTNAG/simpletodo/util"
+	"github.com/golang-migrate/migrate/v4"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
@@ -26,9 +29,24 @@ func main() {
 		log.Fatal("Cannot connect to db: ", err)
 	}
 
+	runDBMigration(cfg.MigrationURL, cfg.DBSource)
+
 	store := db.NewStore(conn)
 
 	startGrpcServer(cfg, store)
+}
+
+func runDBMigration(migrationURL, dbSource string) {
+	migration, err := migrate.New(migrationURL, dbSource)
+	if err != nil {
+		log.Fatal("cannot create a new migrate instance: ", err)
+	}
+
+	if err := migration.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatal("failed to run migrate up: ", err)
+	}
+
+	log.Print("db migrated successfully")
 }
 
 func startGrpcServer(cfg util.Config, store db.Store) {
