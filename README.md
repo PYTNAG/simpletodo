@@ -1,5 +1,7 @@
 # Simple TODO API
 
+### There is also [grpc](https://github.com/PYTNAG/simpletodo/tree/grpc) branch
+
 ## Contents
 
 - [API End-points](#api-end-points)
@@ -11,6 +13,8 @@
 
 <a id="api-end-points"></a>
 ## API End-points
+
+Optional fields marked with "optional" comment
 
 <a id="api-user"></a>
 ### User related
@@ -133,7 +137,7 @@
             {
                 "id": <int32>,
                 "list_id": <int32>,
-                "parent_task": <int32>, # optional
+                "parent_task": <int32>, # optional ; min = 1
                 "task": <string>,
                 "complete": <bool>
             }...
