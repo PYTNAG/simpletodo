@@ -30,13 +30,12 @@ func (s *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	createUserResult, err := s.store.CreateUserTx(
-		ctx,
-		db.CreateUserTxParams{
-			Username: data.Username,
-			Hash:     hash,
-		},
-	)
+	params := db.CreateUserTxParams{
+		Username: data.Username,
+		Hash:     hash,
+	}
+
+	createUserResult, err := s.store.CreateUserTx(ctx, params)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -94,13 +93,13 @@ func (s *Server) rehashUser(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.RehashUserParams{
+	params := db.RehashUserParams{
 		ID:      userId,
 		OldHash: oldHash,
 		NewHash: newHash,
 	}
 
-	if _, err := s.store.RehashUser(ctx, arg); err != nil {
+	if _, err := s.store.RehashUser(ctx, params); err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusForbidden, errorResponse(err, "wrong user id or actual password"))
 			return

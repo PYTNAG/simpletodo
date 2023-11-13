@@ -20,12 +20,12 @@ func (s *Server) addListToUser(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.AddListParams{
+	params := db.AddListParams{
 		Author: ctx.MustGet(userIdKey).(int32),
 		Header: data.Header,
 	}
 
-	if _, err := s.store.AddList(ctx, arg); err != nil {
+	if _, err := s.store.AddList(ctx, params); err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return
 	}

@@ -85,13 +85,13 @@ func (s *Server) addTask(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.AddTaskParams{
+	params := db.AddTaskParams{
 		ListID:     list_id,
 		ParentTask: dbtypes.NewNullInt32(data.ParentTask, data.ParentTask > 0),
 		Task:       data.Task,
 	}
 
-	task, err := s.store.AddTask(ctx, arg)
+	task, err := s.store.AddTask(ctx, params)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 		return

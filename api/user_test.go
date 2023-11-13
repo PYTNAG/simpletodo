@@ -305,22 +305,22 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:   defaultSettings.body,
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				rehashParams := db.RehashUserParams{
+				rehashUserParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
 					NewHash: newHash,
 				}
 
-				rehashResult := db.User{
+				rehashUserResult := db.User{
 					ID:       user.ID,
 					Username: user.Username,
 					Hash:     newHash,
 				}
 
 				store.EXPECT().
-					RehashUser(gomock.Any(), EqRehashUserParams(rehashParams, user.Password, newPass)).
+					RehashUser(gomock.Any(), EqRehashUserParams(rehashUserParams, user.Password, newPass)).
 					Times(1).
-					Return(rehashResult, nil).
+					Return(rehashUserResult, nil).
 					After(getUserCall(store, user))
 			},
 			checkResponse: requierResponseCode(http.StatusNoContent),
@@ -374,14 +374,14 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:   defaultSettings.body,
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				rehashParams := db.RehashUserParams{
+				rehashUserParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
 					NewHash: newHash,
 				}
 
 				store.EXPECT().
-					RehashUser(gomock.Any(), EqRehashUserParams(rehashParams, user.Password, newPass)).
+					RehashUser(gomock.Any(), EqRehashUserParams(rehashUserParams, user.Password, newPass)).
 					Times(1).
 					Return(db.User{}, sql.ErrNoRows).
 					After(getUserCall(store, user))
@@ -395,14 +395,14 @@ func TestRehashUserAPI(t *testing.T) {
 			requestBody:   defaultSettings.body,
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				rehashParams := db.RehashUserParams{
+				rehashUserParams := db.RehashUserParams{
 					ID:      user.ID,
 					OldHash: user.Hash,
 					NewHash: newHash,
 				}
 
 				store.EXPECT().
-					RehashUser(gomock.Any(), EqRehashUserParams(rehashParams, user.Password, newPass)).
+					RehashUser(gomock.Any(), EqRehashUserParams(rehashUserParams, user.Password, newPass)).
 					Times(1).
 					Return(db.User{}, sql.ErrConnDone).
 					After(getUserCall(store, user))

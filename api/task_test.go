@@ -159,7 +159,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 			},
 			setupAuth: defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				params := db.UpdateTaskTextParams{
+				updateTaskParams := db.UpdateTaskTextParams{
 					ID:   taskId,
 					Task: newTaskText,
 				}
@@ -170,7 +170,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 					getTasksCall(store, listId, taskId),
 
 					store.EXPECT().
-						UpdateTaskText(gomock.Any(), gomock.Eq(params)).
+						UpdateTaskText(gomock.Any(), gomock.Eq(updateTaskParams)).
 						Times(1).
 						Return(nil),
 				)
@@ -187,7 +187,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 			},
 			setupAuth: defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				params := db.UpdateTaskTextParams{
+				updateTaskParams := db.UpdateTaskTextParams{
 					ID:   taskId,
 					Task: newTaskText,
 				}
@@ -198,7 +198,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 					getTasksCall(store, listId, taskId),
 
 					store.EXPECT().
-						UpdateTaskText(gomock.Any(), gomock.Eq(params)).
+						UpdateTaskText(gomock.Any(), gomock.Eq(updateTaskParams)).
 						Times(1).
 						Return(sql.ErrConnDone),
 				)
@@ -215,7 +215,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 			},
 			setupAuth: defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				params := db.UpdateCheckTaskParams{
+				updateTaskParams := db.UpdateCheckTaskParams{
 					ID:       taskId,
 					Complete: true,
 				}
@@ -226,7 +226,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 					getTasksCall(store, listId, taskId),
 
 					store.EXPECT().
-						UpdateCheckTask(gomock.Any(), gomock.Eq(params)).
+						UpdateCheckTask(gomock.Any(), gomock.Eq(updateTaskParams)).
 						Times(1).
 						Return(nil),
 				)
@@ -243,7 +243,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 			},
 			setupAuth: defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				params := db.UpdateCheckTaskParams{
+				updateTaskParams := db.UpdateCheckTaskParams{
 					ID:       taskId,
 					Complete: true,
 				}
@@ -254,7 +254,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 					getTasksCall(store, listId, taskId),
 
 					store.EXPECT().
-						UpdateCheckTask(gomock.Any(), gomock.Eq(params)).
+						UpdateCheckTask(gomock.Any(), gomock.Eq(updateTaskParams)).
 						Times(1).
 						Return(sql.ErrConnDone),
 				)
@@ -318,7 +318,7 @@ func TestAddTaskAPI(t *testing.T) {
 			requestBody:   defaultSettings.body,
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				params := db.AddTaskParams{
+				addTaskParams := db.AddTaskParams{
 					ListID:     listId,
 					ParentTask: dbtypes.NewNullInt32(0, false),
 					Task:       newTaskText,
@@ -329,7 +329,7 @@ func TestAddTaskAPI(t *testing.T) {
 					getListsCall(store, user.ID, listId),
 
 					store.EXPECT().
-						AddTask(gomock.Any(), gomock.Eq(params)).
+						AddTask(gomock.Any(), gomock.Eq(addTaskParams)).
 						Times(1).
 						Return(db.Task{ID: taskId}, nil),
 				)
@@ -352,7 +352,7 @@ func TestAddTaskAPI(t *testing.T) {
 			},
 			setupAuth: defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				params := db.AddTaskParams{
+				addTaskParams := db.AddTaskParams{
 					ListID:     listId,
 					ParentTask: dbtypes.NewNullInt32(taskId, true),
 					Task:       newTaskText,
@@ -363,7 +363,7 @@ func TestAddTaskAPI(t *testing.T) {
 					getListsCall(store, user.ID, listId),
 
 					store.EXPECT().
-						AddTask(gomock.Any(), gomock.Eq(params)).
+						AddTask(gomock.Any(), gomock.Eq(addTaskParams)).
 						Times(1).
 						Return(db.Task{ID: taskId}, nil),
 				)
@@ -401,7 +401,7 @@ func TestAddTaskAPI(t *testing.T) {
 			requestBody:   defaultSettings.body,
 			setupAuth:     defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				params := db.AddTaskParams{
+				addTaskParams := db.AddTaskParams{
 					ListID:     listId,
 					ParentTask: dbtypes.NewNullInt32(0, false),
 					Task:       newTaskText,
@@ -412,7 +412,7 @@ func TestAddTaskAPI(t *testing.T) {
 					getListsCall(store, user.ID, listId),
 
 					store.EXPECT().
-						AddTask(gomock.Any(), gomock.Eq(params)).
+						AddTask(gomock.Any(), gomock.Eq(addTaskParams)).
 						Times(1).
 						Return(db.Task{}, sql.ErrConnDone),
 				)
