@@ -13,7 +13,6 @@ import (
 	reflect "reflect"
 
 	db "github.com/PYTNAG/simpletodo/db/sqlc"
-	db0 "github.com/PYTNAG/simpletodo/db/types"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -116,20 +115,6 @@ func (mr *MockStoreMockRecorder) CreateUserTx(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUserTx", reflect.TypeOf((*MockStore)(nil).CreateUserTx), arg0, arg1)
 }
 
-// DeleteCheckedRootTasks mocks base method.
-func (m *MockStore) DeleteCheckedRootTasks(arg0 context.Context, arg1 int32) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteCheckedRootTasks", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteCheckedRootTasks indicates an expected call of DeleteCheckedRootTasks.
-func (mr *MockStoreMockRecorder) DeleteCheckedRootTasks(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCheckedRootTasks", reflect.TypeOf((*MockStore)(nil).DeleteCheckedRootTasks), arg0, arg1)
-}
-
 // DeleteList mocks base method.
 func (m *MockStore) DeleteList(arg0 context.Context, arg1 int32) error {
 	m.ctrl.T.Helper()
@@ -171,21 +156,6 @@ func (m *MockStore) DeleteUser(arg0 context.Context, arg1 int32) (db.DeleteUserR
 func (mr *MockStoreMockRecorder) DeleteUser(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockStore)(nil).DeleteUser), arg0, arg1)
-}
-
-// GetChildTasks mocks base method.
-func (m *MockStore) GetChildTasks(arg0 context.Context, arg1 db0.NullInt32) ([]db.Task, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetChildTasks", arg0, arg1)
-	ret0, _ := ret[0].([]db.Task)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetChildTasks indicates an expected call of GetChildTasks.
-func (mr *MockStoreMockRecorder) GetChildTasks(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChildTasks", reflect.TypeOf((*MockStore)(nil).GetChildTasks), arg0, arg1)
 }
 
 // GetLists mocks base method.

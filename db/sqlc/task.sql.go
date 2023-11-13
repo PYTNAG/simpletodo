@@ -38,16 +38,6 @@ func (q *Queries) AddTask(ctx context.Context, arg AddTaskParams) (Task, error) 
 	return i, err
 }
 
-const deleteCheckedRootTasks = `-- name: DeleteCheckedRootTasks :exec
-DELETE FROM tasks
-WHERE complete AND parent_task IS NULL AND list_id = $1
-`
-
-func (q *Queries) DeleteCheckedRootTasks(ctx context.Context, listID int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCheckedRootTasks, listID)
-	return err
-}
-
 const deleteTask = `-- name: DeleteTask :exec
 DELETE FROM tasks
 WHERE id = $1
@@ -56,40 +46,6 @@ WHERE id = $1
 func (q *Queries) DeleteTask(ctx context.Context, id int32) error {
 	_, err := q.db.ExecContext(ctx, deleteTask, id)
 	return err
-}
-
-const getChildTasks = `-- name: GetChildTasks :many
-SELECT id, list_id, parent_task, task, complete FROM tasks
-WHERE parent_task = $1
-`
-
-func (q *Queries) GetChildTasks(ctx context.Context, parentTask db.NullInt32) ([]Task, error) {
-	rows, err := q.db.QueryContext(ctx, getChildTasks, parentTask)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Task{}
-	for rows.Next() {
-		var i Task
-		if err := rows.Scan(
-			&i.ID,
-			&i.ListID,
-			&i.ParentTask,
-			&i.Task,
-			&i.Complete,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getTasks = `-- name: GetTasks :many

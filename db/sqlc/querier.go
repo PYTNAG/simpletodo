@@ -7,7 +7,6 @@ package db
 import (
 	"context"
 
-	db "github.com/PYTNAG/simpletodo/db/types"
 	"github.com/google/uuid"
 )
 
@@ -16,11 +15,9 @@ type Querier interface {
 	AddTask(ctx context.Context, arg AddTaskParams) (Task, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteCheckedRootTasks(ctx context.Context, listID int32) error
 	DeleteList(ctx context.Context, id int32) error
 	DeleteTask(ctx context.Context, id int32) error
 	DeleteUser(ctx context.Context, id int32) (DeleteUserRow, error)
-	GetChildTasks(ctx context.Context, parentTask db.NullInt32) ([]Task, error)
 	GetLists(ctx context.Context, author int32) ([]GetListsRow, error)
 	GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	GetTasks(ctx context.Context, listID int32) ([]Task, error)

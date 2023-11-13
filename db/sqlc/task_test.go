@@ -81,34 +81,6 @@ func TestUpdateCheckTask(t *testing.T) {
 	deleteTestUser(t, newUser)
 }
 
-func TestDeleteCheckedRootTasks(t *testing.T) {
-	newUser, defaultList := createRandomUser(t, true)
-
-	tasksCount := 6
-	for i := 0; i < tasksCount; i++ {
-		task := createRandomTask(t, defaultList, nil)
-		if i%2 == 0 {
-			params := UpdateCheckTaskParams{
-				ID:       task.ID,
-				Complete: true,
-			}
-			testQueries.UpdateCheckTask(context.Background(), params)
-		}
-	}
-
-	err := testQueries.DeleteCheckedRootTasks(context.Background(), defaultList.ID)
-
-	require.NoError(t, err)
-
-	tasks, err := testQueries.GetTasks(context.Background(), defaultList.ID)
-
-	require.NoError(t, err)
-
-	require.Len(t, tasks, tasksCount/2)
-
-	deleteTestUser(t, newUser)
-}
-
 func TestUpdateTaskText(t *testing.T) {
 	newUser, defaultList := createRandomUser(t, true)
 
@@ -144,26 +116,6 @@ func TestDeleteTask(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, tasks, 0)
-
-	deleteTestUser(t, newUser)
-}
-
-func TestGetChildTasks(t *testing.T) {
-	newUser, defaultList := createRandomUser(t, true)
-
-	parentTask := createRandomTask(t, defaultList, nil)
-
-	var childTasksCount int = 5
-	childs := make([]*Task, childTasksCount)
-
-	for i := range childs {
-		childs[i] = createRandomTask(t, defaultList, parentTask)
-	}
-
-	tasks, err := testQueries.GetChildTasks(context.Background(), db.NewNullInt32(parentTask.ID, true))
-
-	require.NoError(t, err)
-	require.Len(t, tasks, childTasksCount)
 
 	deleteTestUser(t, newUser)
 }
