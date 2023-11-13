@@ -82,20 +82,15 @@ func (q *Queries) GetTasks(ctx context.Context, listID int32) ([]Task, error) {
 	return items, nil
 }
 
-const updateCheckTask = `-- name: UpdateCheckTask :exec
+const toggleTask = `-- name: ToggleTask :exec
 UPDATE tasks
-	set complete = $2
+	set complete = not complete
 WHERE id = $1
 RETURNING id, list_id, parent_task, task, complete
 `
 
-type UpdateCheckTaskParams struct {
-	ID       int32 `json:"id"`
-	Complete bool  `json:"complete"`
-}
-
-func (q *Queries) UpdateCheckTask(ctx context.Context, arg UpdateCheckTaskParams) error {
-	_, err := q.db.ExecContext(ctx, updateCheckTask, arg.ID, arg.Complete)
+func (q *Queries) ToggleTask(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, toggleTask, id)
 	return err
 }
 

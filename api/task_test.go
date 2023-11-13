@@ -210,23 +210,17 @@ func TestUpdateTaskAPI(t *testing.T) {
 			requestMethod: defaultSettings.methodPut,
 			requestUrl:    defaultSettings.url,
 			requestBody: requestBody{
-				"type":  "CHECK",
-				"check": true,
+				"type": "CHECK",
 			},
 			setupAuth: defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				updateTaskParams := db.UpdateCheckTaskParams{
-					ID:       taskId,
-					Complete: true,
-				}
-
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
 					getTasksCall(store, listId, taskId),
 
 					store.EXPECT().
-						UpdateCheckTask(gomock.Any(), gomock.Eq(updateTaskParams)).
+						ToggleTask(gomock.Any(), gomock.Eq(taskId)).
 						Times(1).
 						Return(nil),
 				)
@@ -238,23 +232,17 @@ func TestUpdateTaskAPI(t *testing.T) {
 			requestMethod: defaultSettings.methodPut,
 			requestUrl:    defaultSettings.url,
 			requestBody: requestBody{
-				"type":  "CHECK",
-				"check": true,
+				"type": "CHECK",
 			},
 			setupAuth: defaultSettings.setupAuth,
 			buildStubs: func(store *mockdb.MockStore) {
-				updateTaskParams := db.UpdateCheckTaskParams{
-					ID:       taskId,
-					Complete: true,
-				}
-
 				gomock.InOrder(
 					getUserCall(store, user),
 					getListsCall(store, user.ID, listId),
 					getTasksCall(store, listId, taskId),
 
 					store.EXPECT().
-						UpdateCheckTask(gomock.Any(), gomock.Eq(updateTaskParams)).
+						ToggleTask(gomock.Any(), gomock.Eq(taskId)).
 						Times(1).
 						Return(sql.ErrConnDone),
 				)
@@ -274,7 +262,7 @@ func TestUpdateTaskAPI(t *testing.T) {
 					getTasksCall(store, listId, taskId),
 
 					store.EXPECT().
-						UpdateCheckTask(gomock.Any(), gomock.Any()).
+						ToggleTask(gomock.Any(), gomock.Any()).
 						Times(0),
 				)
 			},

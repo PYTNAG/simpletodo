@@ -28,9 +28,8 @@ func (s *Server) getTasks(ctx *gin.Context) {
 }
 
 type updateTaskData struct {
-	Type  string `json:"type" binding:"required,oneof=CHECK TEXT"`
-	Text  string `json:"text" binding:"required_if=Type TEXT"`
-	Check bool   `json:"check" binding:"boolean,required_if=Type CHECK"`
+	Type string `json:"type" binding:"required,oneof=CHECK TEXT"`
+	Text string `json:"text" binding:"required_if=Type TEXT"`
 }
 
 func (s *Server) updateTask(ctx *gin.Context) {
@@ -44,11 +43,7 @@ func (s *Server) updateTask(ctx *gin.Context) {
 
 	switch strings.ToUpper(data.Type) {
 	case "CHECK":
-		params := db.UpdateCheckTaskParams{
-			ID:       taskId,
-			Complete: data.Check,
-		}
-		if err := s.store.UpdateCheckTask(ctx, params); err != nil {
+		if err := s.store.ToggleTask(ctx, taskId); err != nil {
 			ctx.JSON(http.StatusInternalServerError, errorResponse(err, ""))
 			return
 		}

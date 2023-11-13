@@ -233,18 +233,18 @@ func (mr *MockStoreMockRecorder) RehashUser(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RehashUser", reflect.TypeOf((*MockStore)(nil).RehashUser), arg0, arg1)
 }
 
-// UpdateCheckTask mocks base method.
-func (m *MockStore) UpdateCheckTask(arg0 context.Context, arg1 db.UpdateCheckTaskParams) error {
+// ToggleTask mocks base method.
+func (m *MockStore) ToggleTask(arg0 context.Context, arg1 int32) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateCheckTask", arg0, arg1)
+	ret := m.ctrl.Call(m, "ToggleTask", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateCheckTask indicates an expected call of UpdateCheckTask.
-func (mr *MockStoreMockRecorder) UpdateCheckTask(arg0, arg1 any) *gomock.Call {
+// ToggleTask indicates an expected call of ToggleTask.
+func (mr *MockStoreMockRecorder) ToggleTask(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCheckTask", reflect.TypeOf((*MockStore)(nil).UpdateCheckTask), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ToggleTask", reflect.TypeOf((*MockStore)(nil).ToggleTask), arg0, arg1)
 }
 
 // UpdateTaskText mocks base method.
