@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/PYTNAG/simpletodo/token"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -44,4 +46,19 @@ func (s *Server) authorizeUser(ctx context.Context) (*token.Payload, error) {
 	}
 
 	return payload, nil
+}
+
+func (s *Server) isListAccessAllowed(ctx context.Context, accessPayload *token.Payload, listId int32) error {
+	lists, err := s.store.GetLists(ctx, accessPayload.UserId)
+	if err != nil {
+		return status.Errorf(codes.NotFound, "failed to get \"%s\"'s lists", accessPayload.Username)
+	}
+
+	for _, list := range lists {
+		if list.ID == listId {
+			return nil
+		}
+	}
+
+	return status.Errorf(codes.PermissionDenied, "user %s doesn't have list with id %d", accessPayload.Username, listId)
 }

@@ -11,7 +11,7 @@ func validateCreateList(req *pb.CreateListRequest) (violations []*errdetails.Bad
 		violations = append(violations, fieldViolation("user_id", err))
 	}
 
-	if err := validation.ValidateHeader(req.GetHeader()); err != nil {
+	if err := validation.ValidateStringLength(req.GetHeader(), 1, validation.InfUpperBound); err != nil {
 		violations = append(violations, fieldViolation("header", err))
 	}
 

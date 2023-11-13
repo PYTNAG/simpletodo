@@ -82,21 +82,9 @@ func (s *Server) DeleteList(ctx context.Context, req *pb.DeleteListRequest) (*em
 		return nil, invalidArgumentError(violations)
 	}
 
-	lists, err := s.store.GetLists(ctx, payload.UserId)
+	err = s.isListAccessAllowed(ctx, payload, req.GetListId())
 	if err != nil {
-		return nil, status.Errorf(codes.NotFound, "failed to get \"%s\"'s lists", payload.Username)
-	}
-
-	var isListFound bool = false
-	for _, list := range lists {
-		if list.ID == req.GetListId() {
-			isListFound = true
-			break
-		}
-	}
-
-	if !isListFound {
-		return nil, status.Error(codes.PermissionDenied, "permission denied")
+		return nil, err
 	}
 
 	err = s.store.DeleteList(ctx, req.GetListId())
