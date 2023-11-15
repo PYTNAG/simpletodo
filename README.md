@@ -2,203 +2,160 @@
 
 ## Contents
 
-- [API End-points](#api-end-points)
-    - [User related](#api-user)
-    - [List related](#api-list)
-    - [Task related](#api-task)
-    - [Token related](#api-token)
+- [RPCs](#rpc-end-points)
+    - [User related](#rpc-user)
+    - [List related](#rpc-list)
+    - [Task related](#rpc-task)
+    - [Token related](#rpc-token)
 - [Stack](#stack)
 
 <a id="api-end-points"></a>
-## API End-points
+## RPCs
 
-<a id="api-user"></a>
+If no response message is specified, [google.protobuf.Empty](github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/empty.proto) is used instead.
+```
+message Empty{}
+```
+
+<a id="rpc-user"></a>
 ### User related
 
-- **POST /users**
-    ```yaml
-    # POST /users
-    
-    # Request body
-    {
-        "username": <string>,   
-        "password": <string>    # printable ascii ; minimal length is 8
+- **CreateUser / Unary**
+    ```
+    message CreateUserRequest {
+        string username = 1;
+        string password = 2;
     }
 
-    # Response body
-    {
-        "user_id": <int32>
+    message CreateUserResponse {
+        int32 user_id = 1;
     }
     ```
-- **POST /users/login**
-    ```yaml
-    # POST /users/login
-
-    # Request body
-    {
-        "username": <string>,   
-        "password": <string>
-    }
-
-    # Response body
-    {
-        "session_id": <uuid>,
-        "access_token": <string>,
-        "access_token_expires_at": <time>, # RFC3339 with maximum 9 digits in fractional seconds, without trailing zeros in fractional seconds
-        "refresh_token": <string>,
-        "refresh_token_expires_at": <time>, # same as access_token_expires_at
-        "user_id": <int32>
+- **DeleteUser / Unary**
+    ```
+    message DeleteUserRequest {
+        int32 user_id = 1;
     }
     ```
-- **PUT /users/\<int32\>**
-    ```yaml
-    # PUT /users/<int32>
-    # Require header "authorization : bearer <access_token>"
-
-    # Request body
-    {
-        "old_password": <string>,
-        "new_password": <string>
+- **RehashUser / Unary**
+    ```
+    message RehashUserRequest {
+        int32 user_id = 1;
+        string new_password = 2;
+    }
+    ```
+- **LoginUser / Unary**
+    ```
+    message LoginUserRequest {
+        string username = 1;
+        string password = 2;
     }
 
-    # Without resposne body
-    ```
-- **DELETE /users/\<int32\>**
-    ```yaml
-    # DELETE /users/<int32>
-    # Require header "authorization : bearer <access_token>"
-
-    # Without request body
-
-    # Without response body
+    message LoginUserResponse {
+        int32 user_id = 1;
+        string session_id = 2;
+        string access_token = 3;
+        string refresh_token = 4;
+        google.protobuf.Timestamp access_token_expires_at = 5;
+        google.protobuf.Timestamp refresh_token_expires_at = 6;
+    }
     ```
 
-<a id="api-list"></a>
+<a id="rpc-list"></a>
 ### List related
 
-- **GET /users/\<int32\>/lists**
-    ```yaml
-    # GET /users/<int32>/lists
-    # Require header "authorization : bearer <access_token>"
-
-    # Without request body
-
-    # Resposne body
-    {
-        "lists": [
-            {
-                "id": <int32>,
-                "header": <string>
-            }...
-        ]
+- **CreateList / Unary**
+    ```
+    message CreateListRequest {
+        int32 user_id = 1;
+        string header = 2;
     }
     ```
 
-- **POST /users/\<int32\>/lists**
-    ```yaml
-    # POST /users/<int32>/lists
-    # Require header "authorization : bearer <access_token>"
-
-    # Request body
-    {
-        "header": <string>
+- **GetLists / Server-streaming**
+    ```
+    message GetListsRequest {
+        int32 user_id = 1;
     }
 
-    # Without response body
+    message List {
+        int32 id = 1;
+        string header = 2;
+    }
     ```
 
-- **DELETE /users/\<int32\>/lists/\<int32\>**
-    ```yaml
-    # POST /users/<int32>/lists/<int32>
-    # Require header "authorization : bearer <access_token>"
-
-    # Without request body
-
-    # Without response body
+- **DeleteList / Unary**
+    ```
+    message DeleteListRequest {
+        int32 list_id = 1;
+    }
     ```
 
-<a id="api-task"></a>
+<a id="rpc-task"></a>
 ### Task related
 
-- **GET /users/\<int32\>/lists/\<int32\>/tasks**
-    ```yaml
-    # POST /users/<int32>/lists/<int32>/tasks
-    # Require header "authorization : bearer <access_token>"
+- **CreateTask / Unary**
+    ```
+    message CreateTaskRequest {
+        int32 list_id = 1;
+        string task_text = 2;
+        optional int32 parent_task_id = 3;
+    }
 
-    # Without request body
-
-    # Response body
-    {
-        "tasks": [
-            {
-                "id": <int32>,
-                "list_id": <int32>,
-                "parent_task": <int32>, # optional
-                "task": <string>,
-                "complete": <bool>
-            }...
-        ]
+    message CreateTaskResponse {
+        int32 task_id = 1;
     }
     ```
 
-- **POST /users/\<int32\>/lists/\<int32\>/tasks**
-    ```yaml
-    # POST /users/<int32>/lists/<int32>/tasks
-    # Require header "authorization : bearer <access_token>"
-
-    # Request body
-    {
-        "parent_task": <int32>, # optional ; min = 1
-        "task": <string>
+- **GetTasks / Server-streaming**
+    ```
+    message GetTasksRequest {
+        int32 list_id = 1;
     }
 
-    # Response body
-    {
-        "created_task_id": <int32>
+    message Task {
+        int32 task_id = 1;
+        int32 list_id = 2;
+        string text = 3;
+        bool check = 4;
+        optional int32 parent_task_id = 5;
     }
     ```
 
-- **PUT /users/\<int32\>/lists/\<int32\>/tasks/\<int32\>**
-    ```yaml
-    # POST /users/<int32>/lists/<int32>/tasks/<int32>
-    # Require header "authorization : bearer <access_token>"
+- **DeleteTask / Unary**
+    ```
+    message DeleteTaskRequest {
+        int32 task_id = 1;
+    }
+    ```
 
-    # Request body
-    {
-        "type": <string>, # "TEXT" or "CHECK"
-        "text": <string>, # required if type == TEXT
-        "check": <bool> # required if type == CHECK
+- **UpdateTask / Unary**
+    ```
+    enum UpdateType {
+        UNSET = 0;
+        TEXT = 1;
+        CHECK = 2;
     }
 
-    # Without response body
+    message UpdateTaskRequest {
+        int32 task_id = 1;
+        UpdateType type = 2;
+        optional string new_text = 3;
+    }
     ```
 
-- **DELETE /users/\<int32\>/lists/\<int32\>/tasks/\<int32\>**
-    ```yaml
-    # DELETE /users/<int32>/lists/<int32>/tasks/<int32>
-    # Require header "authorization : bearer <access_token>"
-
-    # Without request body
-
-    # Without response body
-    ```
-
-<a id="api-token"></a>
+<a id="rpc-token"></a>
 ### Token related
 
-- **POST /tokens/refresh_access**
-    ```yaml
-    # POST /tokens/refresh_access
-
-    # Request body
-    {
-        "refresh_token": <string>
+- **RefreshAccessToken / Unary**
+    ```
+    message RefreshAccessTokenRequest {
+        string refresh_token = 1;
     }
 
-    # Response body
-    {
-        "access_token": <string>,
-        "access_token_expires_at": <time> # RFC3339 with maximum 9 digits in fractional seconds, without trailing zeros in fractional seconds
+    message RefreshAccessTokenResponse {
+        string access_token = 1;
+        google.protobuf.Timestamp access_token_expired_at = 2;
     }
     ```
 
@@ -207,7 +164,7 @@
 
 ### Web server
 
-- [gin](https://github.com/gin-gonic/gin)
+- [gRPC](https://grpc.io/docs/languages/go/basics)
 - [paseto](https://github.com/aidantwoods/go-paseto)
 
 ### Data Base (PostgreSQL)
