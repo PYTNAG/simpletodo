@@ -28,7 +28,3 @@ RETURNING *;
 -- name: DeleteTask :exec
 DELETE FROM tasks
 WHERE id = $1;
-
--- name: DeleteCheckedRootTasks :exec
-DELETE FROM tasks
-WHERE complete AND parent_task IS NULL AND list_id = $1;

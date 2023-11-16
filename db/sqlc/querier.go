@@ -16,7 +16,6 @@ type Querier interface {
 	AddTask(ctx context.Context, arg AddTaskParams) (Task, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteCheckedRootTasks(ctx context.Context, listID int32) error
 	DeleteList(ctx context.Context, id int32) error
 	DeleteTask(ctx context.Context, id int32) error
 	DeleteUser(ctx context.Context, id int32) (DeleteUserRow, error)

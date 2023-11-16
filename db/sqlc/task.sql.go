@@ -38,16 +38,6 @@ func (q *Queries) AddTask(ctx context.Context, arg AddTaskParams) (Task, error) 
 	return i, err
 }
 
-const deleteCheckedRootTasks = `-- name: DeleteCheckedRootTasks :exec
-DELETE FROM tasks
-WHERE complete AND parent_task IS NULL AND list_id = $1
-`
-
-func (q *Queries) DeleteCheckedRootTasks(ctx context.Context, listID int32) error {
-	_, err := q.db.ExecContext(ctx, deleteCheckedRootTasks, listID)
-	return err
-}
-
 const deleteTask = `-- name: DeleteTask :exec
 DELETE FROM tasks
 WHERE id = $1

@@ -76,30 +76,6 @@ func TestToggleTask(t *testing.T) {
 	deleteTestUser(t, newUser)
 }
 
-func TestDeleteCheckedRootTasks(t *testing.T) {
-	newUser, defaultList := createRandomUser(t, true)
-
-	tasksCount := 6
-	for i := 0; i < tasksCount; i++ {
-		task := createRandomTask(t, defaultList, nil)
-		if i%2 == 0 {
-			testQueries.ToggleTask(context.Background(), task.ID)
-		}
-	}
-
-	err := testQueries.DeleteCheckedRootTasks(context.Background(), defaultList.ID)
-
-	require.NoError(t, err)
-
-	tasks, err := testQueries.GetTasks(context.Background(), defaultList.ID)
-
-	require.NoError(t, err)
-
-	require.Len(t, tasks, tasksCount/2)
-
-	deleteTestUser(t, newUser)
-}
-
 func TestUpdateTaskText(t *testing.T) {
 	newUser, defaultList := createRandomUser(t, true)
 
