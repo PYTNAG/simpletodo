@@ -134,3 +134,18 @@ func TestGetChildTasks(t *testing.T) {
 
 	deleteTestUser(t, newUser)
 }
+
+func TestGetTaskAutor(t *testing.T) {
+	newUser, defaultList := createRandomUser(t, true)
+
+	task := createRandomTask(t, defaultList, nil)
+
+	author, err := testQueries.GetTaskAuthor(context.Background(), task.ID)
+
+	require.NoError(t, err)
+	require.Greater(t, author, int32(0))
+
+	require.Equal(t, newUser.ID, author)
+
+	deleteTestUser(t, newUser)
+}
