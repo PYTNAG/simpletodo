@@ -82,6 +82,20 @@ func (q *Queries) GetChildTasks(ctx context.Context, parentTask db.NullInt32) ([
 	return items, nil
 }
 
+const getTaskAuthor = `-- name: GetTaskAuthor :one
+SELECT users.id FROM 
+users
+JOIN lists ON users.id = lists.author
+JOIN tasks ON lists.id = tasks.list_id
+WHERE tasks.id = $1
+`
+
+func (q *Queries) GetTaskAuthor(ctx context.Context, id int32) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getTaskAuthor, id)
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getTasks = `-- name: GetTasks :many
 SELECT id, list_id, parent_task, task, complete FROM tasks
 WHERE list_id = $1

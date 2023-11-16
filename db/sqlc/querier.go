@@ -22,6 +22,7 @@ type Querier interface {
 	GetChildTasks(ctx context.Context, parentTask db.NullInt32) ([]Task, error)
 	GetLists(ctx context.Context, author int32) ([]GetListsRow, error)
 	GetSession(ctx context.Context, id uuid.UUID) (Session, error)
+	GetTaskAuthor(ctx context.Context, id int32) (int32, error)
 	GetTasks(ctx context.Context, listID int32) ([]Task, error)
 	GetUser(ctx context.Context, username string) (User, error)
 	RehashUser(ctx context.Context, arg RehashUserParams) (User, error)

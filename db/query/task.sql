@@ -28,3 +28,10 @@ RETURNING *;
 -- name: DeleteTask :exec
 DELETE FROM tasks
 WHERE id = $1;
+
+-- name: GetTaskAuthor :one
+SELECT users.id FROM 
+users
+JOIN lists ON users.id = lists.author
+JOIN tasks ON lists.id = tasks.list_id
+WHERE tasks.id = $1;
