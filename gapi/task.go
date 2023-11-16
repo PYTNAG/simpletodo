@@ -13,6 +13,20 @@ import (
 )
 
 func (s *Server) CreateTask(ctx context.Context, req *pb.CreateTaskRequest) (*pb.CreateTaskResponse, error) {
+	payload, err := s.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
+	violations := validateCreateTask(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
+	if err := s.isListAccessAllowed(ctx, payload, req.GetListId()); err != nil {
+		return nil, err
+	}
+
 	arg := db.AddTaskParams{
 		ListID:     req.GetListId(),
 		ParentTask: dbtypes.NewNullInt32(req.GetParentTaskId(), req.GetParentTaskId() > 0),
@@ -32,6 +46,20 @@ func (s *Server) CreateTask(ctx context.Context, req *pb.CreateTaskRequest) (*pb
 }
 
 func (s *Server) GetTasks(req *pb.GetTasksRequest, stream pb.SimpleTODO_GetTasksServer) error {
+	payload, err := s.authorizeUser(stream.Context())
+	if err != nil {
+		return unauthenticatedError(err)
+	}
+
+	violations := validateGetTasks(req)
+	if violations != nil {
+		return invalidArgumentError(violations)
+	}
+
+	if err := s.isListAccessAllowed(stream.Context(), payload, req.GetListId()); err != nil {
+		return err
+	}
+
 	tasks, err := s.store.GetTasks(stream.Context(), req.GetListId())
 	if err != nil && err != sql.ErrNoRows {
 		return status.Errorf(codes.Internal, "failed to get tasks: %s", err)
@@ -60,7 +88,21 @@ func (s *Server) GetTasks(req *pb.GetTasksRequest, stream pb.SimpleTODO_GetTasks
 }
 
 func (s *Server) DeleteTask(ctx context.Context, req *pb.DeleteTaskRequest) (*emptypb.Empty, error) {
-	err := s.store.DeleteTask(ctx, req.GetTaskId())
+	payload, err := s.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
+	violations := validateDeleteTask(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
+	if err := s.isTaskAccessAllowed(ctx, payload, req.GetTaskId()); err != nil {
+		return nil, err
+	}
+
+	err = s.store.DeleteTask(ctx, req.GetTaskId())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Errorf(codes.NotFound, "there is no task %d", req.GetTaskId())
@@ -73,6 +115,20 @@ func (s *Server) DeleteTask(ctx context.Context, req *pb.DeleteTaskRequest) (*em
 }
 
 func (s *Server) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*emptypb.Empty, error) {
+	payload, err := s.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
+	violations := validateUpdateTask(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
+	if err := s.isTaskAccessAllowed(ctx, payload, req.GetTaskId()); err != nil {
+		return nil, err
+	}
+
 	switch req.Type {
 	case pb.UpdateType_CHECK:
 		if err := s.store.ToggleTask(ctx, req.TaskId); err != nil {

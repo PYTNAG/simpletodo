@@ -62,3 +62,16 @@ func (s *Server) isListAccessAllowed(ctx context.Context, accessPayload *token.P
 
 	return status.Errorf(codes.PermissionDenied, "user %s doesn't have list with id %d", accessPayload.Username, listId)
 }
+
+func (s *Server) isTaskAccessAllowed(ctx context.Context, accessPayload *token.Payload, taskId int32) error {
+	author, err := s.store.GetTaskAuthor(ctx, taskId)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to get author of task: %s", err)
+	}
+
+	if author != accessPayload.UserId {
+		return status.Errorf(codes.PermissionDenied, "user %s doesn't have task %d", accessPayload.Username, taskId)
+	}
+
+	return nil
+}

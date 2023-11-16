@@ -64,8 +64,8 @@ func ValidateId(id int32) error {
 	return nil
 }
 
-func ValidateHeader(header string) error {
-	if err := ValidateStringLength(header, 1, InfUpperBound); err != nil {
+func ValidateStringParam(str string) error {
+	if err := ValidateStringLength(str, 1, InfUpperBound); err != nil {
 		return err
 	}
 
