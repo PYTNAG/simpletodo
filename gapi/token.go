@@ -12,9 +12,18 @@ import (
 )
 
 func (s *Server) RefreshAccessToken(ctx context.Context, req *pb.RefreshAccessTokenRequest) (*pb.RefreshAccessTokenResponse, error) {
+	payload, err := s.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
 	refreshPayload, err := s.pasetoMaker.VerifyToken(req.GetRefreshToken())
 	if err != nil {
 		return nil, status.Errorf(codes.PermissionDenied, "failed to verify refresh token: %s", err)
+	}
+
+	if refreshPayload.UserId != payload.UserId {
+		return nil, status.Errorf(codes.PermissionDenied, "refresh token doesn't belong user %s", payload.Username)
 	}
 
 	session, err := s.store.GetSession(ctx, refreshPayload.ID)
