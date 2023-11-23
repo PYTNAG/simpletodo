@@ -167,6 +167,10 @@ message Empty{}
 - [gRPC](https://grpc.io/docs/languages/go/basics)
 - [paseto](https://github.com/aidantwoods/go-paseto)
 
+### Logging
+
+- [zerolog](https://github.com/rs/zerolog)
+
 ### Data Base (PostgreSQL)
 
 - [lib/pq](https://github.com/lib/pq)
